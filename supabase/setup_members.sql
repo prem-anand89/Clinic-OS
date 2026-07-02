@@ -5,7 +5,7 @@
 insert into public.clinic_members (clinic_id, user_id, role)
 select '11111111-1111-4111-8111-111111111111', id, 'admin'
 from auth.users
-where email in ('prem@example.com', 'aishwarya@example.com')
+where email in ('beyondmechanicspt@gmail.com', 'aishwaryarani31@gmail.com')
 on conflict do nothing;
 
 -- Optional: link auth users to their therapist records (enables per-user
