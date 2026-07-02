@@ -1,0 +1,65 @@
+import Dexie, { type Table } from 'dexie';
+import type { Clinic, Therapist, CatalogItem, Patient, Visit, Invoice } from '@/domain/types';
+
+/**
+ * Queued local mutation awaiting push to Supabase. Only the row id is stored —
+ * the current row state is read from Dexie at push time, so rapid edits to the
+ * same row coalesce into one upsert.
+ */
+export interface OutboxEntry {
+  seq?: number;
+  table: SyncedTable;
+  rowId: string;
+  ts: number;
+  /** Last push error, if any — kept visible instead of dropped */
+  error?: string;
+}
+
+export interface MetaEntry {
+  key: string;
+  value: string;
+}
+
+export type SyncedTable =
+  | 'clinics'
+  | 'therapists'
+  | 'service_catalog'
+  | 'patients'
+  | 'visits'
+  | 'invoices';
+
+/** Tables the client is allowed to write. Invoices are server-issued only. */
+export const CLIENT_WRITABLE_TABLES = [
+  'clinics',
+  'therapists',
+  'service_catalog',
+  'patients',
+  'visits',
+] as const satisfies readonly SyncedTable[];
+
+export class ClinicDB extends Dexie {
+  clinics!: Table<Clinic, string>;
+  therapists!: Table<Therapist, string>;
+  service_catalog!: Table<CatalogItem, string>;
+  patients!: Table<Patient, string>;
+  visits!: Table<Visit, string>;
+  invoices!: Table<Invoice, string>;
+  outbox!: Table<OutboxEntry, number>;
+  meta!: Table<MetaEntry, string>;
+
+  constructor() {
+    super('clinic-os');
+    this.version(1).stores({
+      clinics: 'id',
+      therapists: 'id, clinicId',
+      service_catalog: 'id, clinicId',
+      patients: 'id, clinicId, [clinicId+mrno]',
+      visits: 'id, clinicId, visitDate, patientId, therapistId, packageGroupId, invoiceId',
+      invoices: 'id, clinicId, invoiceNo',
+      outbox: '++seq, table',
+      meta: 'key',
+    });
+  }
+}
+
+export const db = new ClinicDB();

@@ -1,0 +1,77 @@
+import type {
+  Clinic,
+  Therapist,
+  CatalogItem,
+  Patient,
+  Visit,
+  Invoice,
+  UUID,
+} from '@/domain/types';
+
+/**
+ * Repository interfaces — the only data-access surface the services/UI see.
+ * The Dexie implementations back the UI (local-first); the sync engine moves
+ * data to/from Supabase behind the scenes. Swapping the backend means
+ * reimplementing these interfaces, nothing above them.
+ */
+
+export interface ClinicRepo {
+  get(id: UUID): Promise<Clinic | undefined>;
+  list(): Promise<Clinic[]>;
+  put(clinic: Clinic): Promise<void>;
+}
+
+export interface TherapistRepo {
+  list(clinicId: UUID, includeInactive?: boolean): Promise<Therapist[]>;
+  put(therapist: Therapist): Promise<void>;
+}
+
+export interface CatalogRepo {
+  list(clinicId: UUID, includeInactive?: boolean): Promise<CatalogItem[]>;
+  get(id: UUID): Promise<CatalogItem | undefined>;
+  put(item: CatalogItem): Promise<void>;
+}
+
+export interface PatientRepo {
+  get(id: UUID): Promise<Patient | undefined>;
+  getByMrno(clinicId: UUID, mrno: string): Promise<Patient | undefined>;
+  /** Case-insensitive match on MRNO prefix or name substring */
+  search(clinicId: UUID, query: string, limit?: number): Promise<Patient[]>;
+  list(clinicId: UUID): Promise<Patient[]>;
+  put(patient: Patient): Promise<void>;
+}
+
+export interface VisitFilter {
+  clinicId: UUID;
+  from?: string;
+  to?: string;
+  therapistId?: UUID;
+  patientId?: UUID;
+}
+
+export interface VisitRepo {
+  get(id: UUID): Promise<Visit | undefined>;
+  list(filter: VisitFilter): Promise<Visit[]>;
+  listByIds(ids: UUID[]): Promise<Visit[]>;
+  listByPackageGroup(packageGroupId: UUID): Promise<Visit[]>;
+  put(visit: Visit): Promise<void>;
+  softDelete(id: UUID): Promise<void>;
+  /** Local stamp after the server-side issue_invoice RPC succeeds */
+  markInvoiced(ids: UUID[], invoiceId: UUID): Promise<void>;
+}
+
+export interface InvoiceRepo {
+  get(id: UUID): Promise<Invoice | undefined>;
+  list(clinicId: UUID): Promise<Invoice[]>;
+  /** Local cache write for a server-issued invoice (not outboxed) */
+  putLocal(invoice: Invoice): Promise<void>;
+}
+
+export interface Repos {
+  clinics: ClinicRepo;
+  therapists: TherapistRepo;
+  catalog: CatalogRepo;
+  patients: PatientRepo;
+  visits: VisitRepo;
+  invoices: InvoiceRepo;
+}
