@@ -1,0 +1,87 @@
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  redirect,
+} from '@tanstack/react-router';
+import { Shell } from './Shell';
+import { VisitsPage } from '@/features/visits/VisitsPage';
+import { NewVisitPage } from '@/features/visits/NewVisitPage';
+import { PatientsPage } from '@/features/patients/PatientsPage';
+import { ReportsPage } from '@/features/reports/ReportsPage';
+import { InvoicesPage } from '@/features/invoices/InvoicesPage';
+import { InvoicePrintPage } from '@/features/invoices/InvoicePrintPage';
+import { SetupPage } from '@/features/setup/SetupPage';
+
+const rootRoute = createRootRoute({ component: Shell });
+
+const indexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  beforeLoad: () => {
+    throw redirect({ to: '/visits' });
+  },
+});
+
+const visitsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/visits',
+  validateSearch: (search: Record<string, unknown>): { patientId?: string } =>
+    typeof search.patientId === 'string' ? { patientId: search.patientId } : {},
+  component: VisitsPage,
+});
+
+const newVisitRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/visits/new',
+  component: NewVisitPage,
+});
+
+const patientsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/patients',
+  component: PatientsPage,
+});
+
+const reportsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reports',
+  component: ReportsPage,
+});
+
+const invoicesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/invoices',
+  component: InvoicesPage,
+});
+
+const invoicePrintRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/invoices/$invoiceId/print',
+  component: InvoicePrintPage,
+});
+
+const setupRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/setup',
+  component: SetupPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  visitsRoute,
+  newVisitRoute,
+  patientsRoute,
+  reportsRoute,
+  invoicesRoute,
+  invoicePrintRoute,
+  setupRoute,
+]);
+
+export const router = createRouter({ routeTree });
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
+  }
+}
