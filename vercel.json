@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "build": {
+    "env": {
+      "VITE_SUPABASE_URL": "https://jcmpvpbnkazwuecxfjep.supabase.co",
+      "VITE_SUPABASE_ANON_KEY": "sb_publishable_n1rH7DKM1T548L5U5YHGnw_CmCo1wA4"
+    }
+  }
+}
