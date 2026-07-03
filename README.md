@@ -42,6 +42,15 @@ supabase/          SQL migrations (schema, RLS, RPCs), seed
 Business logic never imports Supabase or Dexie — swapping the backend means
 reimplementing the repository interfaces, nothing above them.
 
+## Status
+
+Phase 1 is live and verified against the real Beyond Mechanics Supabase
+project (not just a stubbed config): real login, real patient/visit/invoice
+creation, gap-free sequential invoice numbers, DB-enforced invoice
+immutability, and revenue-split math on the monthly report all confirmed
+against production data. Offline → online sync (outbox drains a visit logged
+while disconnected) is the one item still pending a live run.
+
 ## One-time setup
 
 1. Create a Supabase project (free tier is fine).
