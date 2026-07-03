@@ -39,6 +39,12 @@ Beyond Mechanics @ Health Valley, structured multi-clinic from day one.
   monthly report also shows an HV settlement card: log what Health Valley
   actually paid out for the month and see the variance against the
   computed Post-Tax BM total.
+- **Dashboard** — a rolling last-6-months view: Post-Tax BM revenue trend,
+  a therapist-vs-therapist comparison, a list of open packages sorted by
+  days since the patient was last seen (flagged stale past 14 days), and
+  a running total of outstanding invoices. Charts are a small hand-built
+  SVG component (no charting dependency), colored from a validated
+  categorical palette.
 
 ## Architecture
 
