@@ -1,5 +1,14 @@
 import Dexie, { type Table } from 'dexie';
-import type { Clinic, Therapist, CatalogItem, Patient, Visit, Invoice } from '@/domain/types';
+import type {
+  Clinic,
+  Therapist,
+  CatalogItem,
+  Patient,
+  Visit,
+  Invoice,
+  InvoicePayment,
+  Settlement,
+} from '@/domain/types';
 
 /**
  * Queued local mutation awaiting push to Supabase. Only the row id is stored —
@@ -26,7 +35,9 @@ export type SyncedTable =
   | 'service_catalog'
   | 'patients'
   | 'visits'
-  | 'invoices';
+  | 'invoices'
+  | 'invoice_payments'
+  | 'settlements';
 
 /** Tables the client is allowed to write. Invoices are server-issued only. */
 export const CLIENT_WRITABLE_TABLES = [
@@ -35,6 +46,8 @@ export const CLIENT_WRITABLE_TABLES = [
   'service_catalog',
   'patients',
   'visits',
+  'invoice_payments',
+  'settlements',
 ] as const satisfies readonly SyncedTable[];
 
 export class ClinicDB extends Dexie {
@@ -44,6 +57,8 @@ export class ClinicDB extends Dexie {
   patients!: Table<Patient, string>;
   visits!: Table<Visit, string>;
   invoices!: Table<Invoice, string>;
+  invoice_payments!: Table<InvoicePayment, string>;
+  settlements!: Table<Settlement, string>;
   outbox!: Table<OutboxEntry, number>;
   meta!: Table<MetaEntry, string>;
 
@@ -58,6 +73,10 @@ export class ClinicDB extends Dexie {
       invoices: 'id, clinicId, invoiceNo',
       outbox: '++seq, table',
       meta: 'key',
+    });
+    this.version(2).stores({
+      invoice_payments: 'id, clinicId, invoiceId',
+      settlements: 'id, clinicId, [clinicId+year+month]',
     });
   }
 }

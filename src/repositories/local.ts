@@ -6,6 +6,8 @@ import type {
   Patient,
   Visit,
   Invoice,
+  InvoicePayment,
+  Settlement,
   UUID,
 } from '@/domain/types';
 import type {
@@ -16,6 +18,8 @@ import type {
   VisitRepo,
   VisitFilter,
   InvoiceRepo,
+  InvoicePaymentRepo,
+  SettlementRepo,
   Repos,
 } from './types';
 
@@ -138,7 +142,29 @@ const invoices: InvoiceRepo = {
   },
 };
 
-export const repos: Repos = { clinics, therapists, catalog, patients, visits, invoices };
+const invoicePayments: InvoicePaymentRepo = {
+  getByInvoiceId: (invoiceId) => db.invoice_payments.where('invoiceId').equals(invoiceId).first(),
+  list: (clinicId) => db.invoice_payments.where('clinicId').equals(clinicId).toArray(),
+  put: (payment) => putWithOutbox('invoice_payments', payment),
+};
+
+const settlements: SettlementRepo = {
+  getByPeriod: (clinicId, year, month) =>
+    db.settlements.where('[clinicId+year+month]').equals([clinicId, year, month]).first(),
+  list: (clinicId) => db.settlements.where('clinicId').equals(clinicId).toArray(),
+  put: (settlement) => putWithOutbox('settlements', settlement),
+};
+
+export const repos: Repos = {
+  clinics,
+  therapists,
+  catalog,
+  patients,
+  visits,
+  invoices,
+  invoicePayments,
+  settlements,
+};
 
 // Narrow re-exports used by the sync engine and UI helpers
-export type { Clinic, Therapist, CatalogItem, Patient, Visit, Invoice };
+export type { Clinic, Therapist, CatalogItem, Patient, Visit, Invoice, InvoicePayment, Settlement };

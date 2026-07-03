@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { repos, invoiceService } from '@/services';
+import { repos, invoiceService, paymentService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import type { PaymentMode, Visit } from '@/domain/types';
@@ -19,6 +19,7 @@ export function VisitsPage() {
   const [therapistId, setTherapistId] = useState('');
   const [invoicing, setInvoicing] = useState<Visit | null>(null);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('Cash');
+  const [paidNow, setPaidNow] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -52,6 +53,7 @@ export function VisitsPage() {
     setError(null);
     try {
       const invoice = await invoiceService.issueForVisit(invoicing.id, paymentMode);
+      await paymentService.setStatus(invoice.id, clinic.id, paidNow ? 'paid' : 'outstanding');
       setInvoicing(null);
       void navigate({ to: '/invoices/$invoiceId/print', params: { invoiceId: invoice.id } });
     } catch (e) {
@@ -151,6 +153,7 @@ export function VisitsPage() {
                         className="text-blue-600 hover:underline"
                         onClick={() => {
                           setError(null);
+                          setPaidNow(true);
                           setInvoicing(v);
                         }}
                       >
@@ -207,6 +210,16 @@ export function VisitsPage() {
                 ))}
               </select>
             </Field>
+            <div className="flex gap-4 text-sm">
+              <label className="flex items-center gap-2">
+                <input type="radio" checked={paidNow} onChange={() => setPaidNow(true)} />
+                Paid now
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="radio" checked={!paidNow} onChange={() => setPaidNow(false)} />
+                Outstanding — pay later
+              </label>
+            </div>
             <ErrorNote message={error} />
             <p className="text-xs text-slate-500">
               The invoice number is issued by the server and the bill becomes immutable — this

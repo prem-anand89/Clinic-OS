@@ -33,6 +33,12 @@ Beyond Mechanics @ Health Valley, structured multi-clinic from day one.
   package sessions, and flags anything it can't confidently resolve (bad
   dates, unmatched services, ambiguous package billing) for manual review
   before committing. No invoices are generated for imported visits.
+- **Payment status & HV settlement** — a simple paid/outstanding status per
+  invoice (Visits → Issue invoice, and toggleable later on the Invoices
+  page), tracked in a separate table so issued invoices stay immutable. The
+  monthly report also shows an HV settlement card: log what Health Valley
+  actually paid out for the month and see the variance against the
+  computed Post-Tax BM total.
 
 ## Architecture
 
@@ -61,8 +67,10 @@ production data.
 ## One-time setup
 
 1. Create a Supabase project (free tier is fine).
-2. Apply the migration: paste `supabase/migrations/*.sql` into the SQL editor
-   (or `supabase db push` with the CLI), then run `supabase/seed.sql`.
+2. Apply the migrations, in filename order: paste each file in
+   `supabase/migrations/` into the SQL editor (or `supabase db push` with the
+   CLI), then run `supabase/seed.sql`. For an already-live project, only the
+   migration file(s) not yet applied need to be run.
 3. Create the two auth users (Authentication → Users → Add user), then run
    `supabase/setup_members.sql` with their real emails to grant clinic access.
 4. `cp .env.example .env` and fill in the project URL + anon key

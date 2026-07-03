@@ -104,6 +104,16 @@ function makeFakeRepos() {
       list: async () => [],
       putLocal: async () => {},
     },
+    invoicePayments: {
+      getByInvoiceId: async () => undefined,
+      list: async () => [],
+      put: async () => {},
+    },
+    settlements: {
+      getByPeriod: async () => undefined,
+      list: async () => [],
+      put: async () => {},
+    },
   };
   return { repos, patients, visits };
 }

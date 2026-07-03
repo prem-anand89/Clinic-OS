@@ -5,6 +5,8 @@ import type {
   Patient,
   Visit,
   Invoice,
+  InvoicePayment,
+  Settlement,
   UUID,
 } from '@/domain/types';
 
@@ -67,6 +69,18 @@ export interface InvoiceRepo {
   putLocal(invoice: Invoice): Promise<void>;
 }
 
+export interface InvoicePaymentRepo {
+  getByInvoiceId(invoiceId: UUID): Promise<InvoicePayment | undefined>;
+  list(clinicId: UUID): Promise<InvoicePayment[]>;
+  put(payment: InvoicePayment): Promise<void>;
+}
+
+export interface SettlementRepo {
+  getByPeriod(clinicId: UUID, year: number, month: number): Promise<Settlement | undefined>;
+  list(clinicId: UUID): Promise<Settlement[]>;
+  put(settlement: Settlement): Promise<void>;
+}
+
 export interface Repos {
   clinics: ClinicRepo;
   therapists: TherapistRepo;
@@ -74,4 +88,6 @@ export interface Repos {
   patients: PatientRepo;
   visits: VisitRepo;
   invoices: InvoiceRepo;
+  invoicePayments: InvoicePaymentRepo;
+  settlements: SettlementRepo;
 }

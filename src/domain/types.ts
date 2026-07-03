@@ -127,3 +127,32 @@ export interface Invoice {
   therapistId: UUID | null;
   updatedAt: string;
 }
+
+export type PaymentStatus = 'paid' | 'outstanding';
+
+/**
+ * Lives apart from Invoice — invoices are immutable once issued, so payment
+ * status can't be a column there. Absence of a row for an invoice means
+ * "paid" (every invoice issued before this feature shipped implied
+ * immediate payment; see paymentService).
+ */
+export interface InvoicePayment {
+  id: UUID;
+  clinicId: UUID;
+  invoiceId: UUID;
+  status: PaymentStatus;
+  paidAt: string | null;
+  updatedAt: string;
+}
+
+/** What Health Valley actually paid Beyond Mechanics for one fiscal month. */
+export interface Settlement {
+  id: UUID;
+  clinicId: UUID;
+  year: number;
+  month: number;
+  amountReceivedPaise: Paise;
+  receivedDate: string | null;
+  notes: string | null;
+  updatedAt: string;
+}
