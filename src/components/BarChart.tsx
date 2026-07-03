@@ -33,6 +33,10 @@ export function BarChart({
   height?: number;
   showValueLabels?: boolean;
 }) {
+  if (categories.length === 0) {
+    return <p className="py-6 text-center text-sm text-slate-400">No data to chart.</p>;
+  }
+
   const width = 640;
   const padding = { top: 24, right: 8, bottom: 28, left: 8 };
   const plotW = width - padding.left - padding.right;

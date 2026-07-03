@@ -53,7 +53,14 @@ export function VisitsPage() {
     setError(null);
     try {
       const invoice = await invoiceService.issueForVisit(invoicing.id, paymentMode);
-      await paymentService.setStatus(invoice.id, clinic.id, paidNow ? 'paid' : 'outstanding');
+      try {
+        await paymentService.setStatus(invoice.id, clinic.id, paidNow ? 'paid' : 'outstanding');
+      } catch (statusError) {
+        // Non-fatal: the invoice IS issued (retrying would fail with
+        // "already invoiced"), and a missing status row reads as Paid —
+        // correctable anytime from the Invoices page.
+        console.error('Could not record payment status', statusError);
+      }
       setInvoicing(null);
       void navigate({ to: '/invoices/$invoiceId/print', params: { invoiceId: invoice.id } });
     } catch (e) {

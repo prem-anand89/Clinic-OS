@@ -58,10 +58,13 @@ export function createDashboardService(repos: Repos) {
       return Promise.all(lastNMonths(months).map((m) => reportService.monthly(clinicId, m)));
     },
 
-    async openPackages(clinicId: UUID, lookbackMonths = 6): Promise<OpenPackageRow[]> {
-      const from = lastNMonths(lookbackMonths)[0];
+    async openPackages(clinicId: UUID): Promise<OpenPackageRow[]> {
+      // Full history, deliberately unbounded: a date window would hide a
+      // package's earlier sessions and miscount its progress (or resurrect
+      // a completed package as open). Volume is small; visits.list scans
+      // the clinic index either way.
       const [visits, catalog, patients] = await Promise.all([
-        repos.visits.list({ clinicId, from: `${from.year}-${String(from.month).padStart(2, '0')}-01` }),
+        repos.visits.list({ clinicId }),
         repos.catalog.list(clinicId, true),
         repos.patients.list(clinicId),
       ]);

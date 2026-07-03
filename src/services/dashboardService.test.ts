@@ -189,6 +189,17 @@ describe('dashboardService.openPackages', () => {
     const svc = createDashboardService(fake.repos);
     expect(await svc.openPackages('clinic-1')).toEqual([]);
   });
+
+  it('counts sessions across all history, not a recent window', async () => {
+    // Regression: a package whose earlier sessions are older than any
+    // "recent months" cutoff must still count them — 3 of 3 logged means
+    // NOT open, even if two sessions are a year old.
+    fake.visits.set('v1', baseVisit('v1', { visitDate: '2025-01-05', packageGroupId: 'g1', packageTotal: 3 }));
+    fake.visits.set('v2', baseVisit('v2', { visitDate: '2025-01-12', packageGroupId: 'g1', packageTotal: 3 }));
+    fake.visits.set('v3', baseVisit('v3', { visitDate: '2026-06-20', packageGroupId: 'g1', packageTotal: 3 }));
+    const svc = createDashboardService(fake.repos);
+    expect(await svc.openPackages('clinic-1')).toEqual([]);
+  });
 });
 
 describe('dashboardService.outstandingInvoices', () => {

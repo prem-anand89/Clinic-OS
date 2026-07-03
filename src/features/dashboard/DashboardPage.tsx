@@ -8,8 +8,19 @@ import { monthName } from '@/domain/fiscalYear';
 import { SectionCard, th, thNum, td, tdNum } from '@/components/ui';
 import { BarChart } from '@/components/BarChart';
 
-// Reference categorical palette (data-viz skill) — fixed order, never cycled.
-const SERIES_COLORS = ['#2a78d6', '#1baf7a', '#eda100', '#4a3aa7'];
+// Reference categorical palette — all 8 validated slots in fixed order,
+// assigned by index and never cycled (a 9th series would repeat hues and
+// break CVD separation; fold into "Other" before that ever happens).
+const SERIES_COLORS = [
+  '#2a78d6', // blue
+  '#1baf7a', // aqua
+  '#eda100', // yellow
+  '#008300', // green
+  '#4a3aa7', // violet
+  '#e34948', // red
+  '#e87ba4', // magenta
+  '#eb6834', // orange
+];
 const STATUS_WARNING = '#fab219';
 
 export function DashboardPage() {
@@ -83,9 +94,9 @@ export function DashboardPage() {
         {trend && therapistNames.length > 0 && (
           <BarChart
             categories={categories}
-            series={therapistNames.map((name, i) => ({
+            series={therapistNames.slice(0, SERIES_COLORS.length).map((name, i) => ({
               label: name,
-              color: SERIES_COLORS[i % SERIES_COLORS.length],
+              color: SERIES_COLORS[i],
               values: trend.map((r) => r.rows.find((row) => row.therapistName === name)?.postTaxPaise ?? 0),
             }))}
             formatValue={formatINR}
