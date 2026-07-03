@@ -10,6 +10,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  server: {
+    // Bind to 0.0.0.0 so port-forwarding proxies (Codespaces, containers) can reach it
+    host: true,
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
