@@ -5,7 +5,7 @@ import { dashboardService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import { monthName } from '@/domain/fiscalYear';
-import { SectionCard, th, thNum, td, tdNum } from '@/components/ui';
+import { Pill, SectionCard, StatTile, th, thNum, td, tdNum } from '@/components/ui';
 import { BarChart } from '@/components/BarChart';
 
 // Reference categorical palette — all 8 validated slots in fixed order,
@@ -21,7 +21,6 @@ const SERIES_COLORS = [
   '#e87ba4', // magenta
   '#eb6834', // orange
 ];
-const STATUS_WARNING = '#fab219';
 
 export function DashboardPage() {
   const clinic = useClinic();
@@ -74,7 +73,7 @@ export function DashboardPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {(trend ?? []).map((r, i) => (
-                <tr key={i}>
+                <tr key={i} className="hover:bg-slate-50">
                   <td className={td}>{categories[i]}</td>
                   <td className={tdNum}>{formatINR(r.total.billPaise)}</td>
                   <td className={tdNum}>{formatINR(r.total.bmSharePaise)}</td>
@@ -127,7 +126,7 @@ export function DashboardPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {(openPackages ?? []).map((p) => (
-                <tr key={p.packageGroupId}>
+                <tr key={p.packageGroupId} className="hover:bg-slate-50">
                   <td className={td}>
                     {p.patientName} <span className="text-xs text-slate-400">{p.mrno}</span>
                   </td>
@@ -138,16 +137,7 @@ export function DashboardPage() {
                   <td className={td}>{p.startedOn}</td>
                   <td className={td}>{p.lastVisitOn}</td>
                   <td className={tdNum}>{p.daysSinceLastVisit}</td>
-                  <td className={td}>
-                    {p.stale && (
-                      <span
-                        className="rounded-full px-2 py-0.5 text-xs font-medium text-white"
-                        style={{ backgroundColor: STATUS_WARNING }}
-                      >
-                        ⚠ Stale
-                      </span>
-                    )}
-                  </td>
+                  <td className={td}>{p.stale && <Pill tone="amber">⚠ Stale</Pill>}</td>
                 </tr>
               ))}
               {openPackages?.length === 0 && (
@@ -163,17 +153,9 @@ export function DashboardPage() {
       </SectionCard>
 
       <SectionCard title="Outstanding payments">
-        <div className="mb-4 flex gap-6">
-          <div className="rounded-md bg-slate-50 px-4 py-3">
-            <div className="text-xs text-slate-500">Total outstanding</div>
-            <div className="text-lg font-semibold text-slate-900">
-              {formatINR(outstanding?.totalPaise ?? 0)}
-            </div>
-          </div>
-          <div className="rounded-md bg-slate-50 px-4 py-3">
-            <div className="text-xs text-slate-500">Invoices</div>
-            <div className="text-lg font-semibold text-slate-900">{outstanding?.count ?? 0}</div>
-          </div>
+        <div className="mb-4 flex gap-4">
+          <StatTile label="Total outstanding" value={formatINR(outstanding?.totalPaise ?? 0)} />
+          <StatTile label="Invoices" value={outstanding?.count ?? 0} />
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -188,7 +170,7 @@ export function DashboardPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {(outstanding?.rows ?? []).map((r) => (
-                <tr key={r.invoiceId}>
+                <tr key={r.invoiceId} className="hover:bg-slate-50">
                   <td className={td}>
                     <Link
                       to="/invoices/$invoiceId/print"

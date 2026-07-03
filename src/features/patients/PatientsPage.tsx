@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { repos } from '@/services';
 import { useClinic } from '@/app/clinicContext';
-import { inputCls, th, td } from '@/components/ui';
+import { inputCls, Pill, th, td } from '@/components/ui';
 
 export function PatientsPage() {
   const clinic = useClinic();
@@ -44,8 +44,8 @@ export function PatientsPage() {
                 <td className={td}>
                   {p.mrno}
                   {p.mrnoSource === 'auto' && (
-                    <span className="ml-1 rounded bg-slate-100 px-1 text-[10px] text-slate-500">
-                      walk-in
+                    <span className="ml-1.5">
+                      <Pill tone="slate">walk-in</Pill>
                     </span>
                   )}
                 </td>

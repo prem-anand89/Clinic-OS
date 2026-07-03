@@ -5,7 +5,7 @@ import { repos, paymentService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import type { PaymentStatus } from '@/domain/types';
-import { th, thNum, td, tdNum } from '@/components/ui';
+import { Pill, th, thNum, td, tdNum } from '@/components/ui';
 
 export function InvoicesPage() {
   const clinic = useClinic();
@@ -53,15 +53,9 @@ export function InvoicesPage() {
                   <td className={tdNum}>{formatINR(inv.totalPaise)}</td>
                   <td className={td}>{inv.paymentMode}</td>
                   <td className={td}>
-                    <span
-                      className={
-                        status === 'paid'
-                          ? 'rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700'
-                          : 'rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700'
-                      }
-                    >
+                    <Pill tone={status === 'paid' ? 'green' : 'amber'}>
                       {status === 'paid' ? 'Paid' : 'Outstanding'}
-                    </span>
+                    </Pill>
                     <button
                       className="ml-2 text-xs text-blue-600 hover:underline"
                       onClick={() => void toggle(inv.id, status)}

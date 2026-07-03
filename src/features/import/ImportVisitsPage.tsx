@@ -10,7 +10,7 @@ import type {
   Resolutions,
   RowResolution,
 } from '@/services/importVisitsService';
-import { btnPrimary, btnSecondary, ErrorNote, SectionCard } from '@/components/ui';
+import { btnPrimary, btnSecondary, ErrorNote, SectionCard, StatTile } from '@/components/ui';
 import { ImportPreviewTable, allRowsResolved } from './ImportPreviewTable';
 
 type Stage =
@@ -105,10 +105,10 @@ export function ImportVisitsPage() {
         <>
           <SectionCard title="Summary">
             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-              <Stat label="Rows parsed" value={stage.preview.summary.totalRows} />
-              <Stat label="Patients" value={stage.preview.summary.distinctPatients} />
-              <Stat label="New patients" value={stage.preview.summary.newPatients} />
-              <Stat label="Packages" value={stage.preview.summary.packagesDetected} />
+              <StatTile label="Rows parsed" value={stage.preview.summary.totalRows} />
+              <StatTile label="Patients" value={stage.preview.summary.distinctPatients} />
+              <StatTile label="New patients" value={stage.preview.summary.newPatients} />
+              <StatTile label="Packages" value={stage.preview.summary.packagesDetected} />
             </div>
           </SectionCard>
 
@@ -171,15 +171,6 @@ export function ImportVisitsPage() {
           </div>
         </SectionCard>
       )}
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-md bg-slate-50 px-3 py-2">
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className="text-lg font-semibold text-slate-900">{value}</div>
     </div>
   );
 }

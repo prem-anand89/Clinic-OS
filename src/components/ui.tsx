@@ -62,6 +62,31 @@ export function RupeeInput({
   );
 }
 
+/** Small caption-over-number tile for summary strips. */
+export function StatTile({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="rounded-lg bg-slate-50 px-4 py-3">
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className="text-lg font-semibold tabular-nums text-slate-900">{value}</div>
+    </div>
+  );
+}
+
+const PILL_TONES = {
+  green: 'bg-emerald-50 text-emerald-700',
+  amber: 'bg-amber-50 text-amber-700',
+  slate: 'bg-slate-100 text-slate-500',
+} as const;
+
+/** Status badge. Pair color with words/icons — never color alone. */
+export function Pill({ tone, children }: { tone: keyof typeof PILL_TONES; children: ReactNode }) {
+  return (
+    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${PILL_TONES[tone]}`}>
+      {children}
+    </span>
+  );
+}
+
 export const th = 'px-3 py-2 text-left text-xs font-semibold text-slate-600';
 export const td = 'px-3 py-2 text-sm text-slate-800';
 export const tdNum = 'px-3 py-2 text-sm text-slate-800 text-right tabular-nums';

@@ -1,5 +1,17 @@
 @import 'tailwindcss';
 
+/* Chart bars grow from the baseline on mount (see components/BarChart.tsx) */
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+.bar-grow {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: bar-grow 0.45s ease-out backwards;
+}
+
 @media print {
   .no-print {
     display: none !important;
