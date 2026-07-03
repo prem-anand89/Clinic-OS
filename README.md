@@ -50,12 +50,13 @@ reimplementing the repository interfaces, nothing above them.
 
 ## Status
 
-Phase 1 is live and verified against the real Beyond Mechanics Supabase
-project (not just a stubbed config): real login, real patient/visit/invoice
-creation, gap-free sequential invoice numbers, DB-enforced invoice
-immutability, and revenue-split math on the monthly report all confirmed
-against production data. Offline → online sync (outbox drains a visit logged
-while disconnected) is the one item still pending a live run.
+Phase 1 is live and fully verified against the real Beyond Mechanics
+Supabase project (not just a stubbed config): real login, real
+patient/visit/invoice creation, gap-free sequential invoice numbers,
+DB-enforced invoice immutability, revenue-split math on the monthly report,
+and offline → online sync (a visit logged with connectivity off queues
+locally and drains to Postgres once back online) — all confirmed against
+production data.
 
 ## One-time setup
 
