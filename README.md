@@ -27,6 +27,12 @@ Beyond Mechanics @ Health Valley, structured multi-clinic from day one.
 - **Offline-first** — all entry works offline; changes queue in an outbox and
   sync when a connection returns. Invoice issuance is deliberately online-only
   (gap-free numbers need the server counter).
+- **Historical import** (Setup → Import historical visits) — one-time import
+  of pre-go-live visits from the clinic's Excel ledger: matches/creates
+  patients by MRNO, parses freeform service names into catalog items and
+  package sessions, and flags anything it can't confidently resolve (bad
+  dates, unmatched services, ambiguous package billing) for manual review
+  before committing. No invoices are generated for imported visits.
 
 ## Architecture
 

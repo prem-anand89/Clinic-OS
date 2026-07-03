@@ -12,6 +12,7 @@ import { ReportsPage } from '@/features/reports/ReportsPage';
 import { InvoicesPage } from '@/features/invoices/InvoicesPage';
 import { InvoicePrintPage } from '@/features/invoices/InvoicePrintPage';
 import { SetupPage } from '@/features/setup/SetupPage';
+import { ImportVisitsPage } from '@/features/import/ImportVisitsPage';
 
 const rootRoute = createRootRoute({ component: Shell });
 
@@ -67,6 +68,12 @@ const setupRoute = createRoute({
   component: SetupPage,
 });
 
+const importVisitsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/setup/import-visits',
+  component: ImportVisitsPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   visitsRoute,
@@ -76,6 +83,7 @@ const routeTree = rootRoute.addChildren([
   invoicesRoute,
   invoicePrintRoute,
   setupRoute,
+  importVisitsRoute,
 ]);
 
 export const router = createRouter({ routeTree });

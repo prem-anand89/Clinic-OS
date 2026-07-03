@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { repos } from '@/services';
 import { useClinic } from '@/app/clinicContext';
@@ -27,6 +28,14 @@ export function SetupPage() {
       <ClinicProfile />
       <Catalog />
       <Therapists />
+      <SectionCard title="Historical data">
+        <p className="mb-3 text-xs text-slate-500">
+          One-time import of visits logged before go-live in the Excel ledger.
+        </p>
+        <Link to="/setup/import-visits" className="text-sm text-blue-600 hover:underline">
+          Import historical visits from Excel →
+        </Link>
+      </SectionCard>
     </div>
   );
 }
