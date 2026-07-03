@@ -9,6 +9,7 @@ import { VisitsPage } from '@/features/visits/VisitsPage';
 import { NewVisitPage } from '@/features/visits/NewVisitPage';
 import { PatientsPage } from '@/features/patients/PatientsPage';
 import { ReportsPage } from '@/features/reports/ReportsPage';
+import { MonthlyLedgerPrintPage } from '@/features/reports/MonthlyLedgerPrintPage';
 import { InvoicesPage } from '@/features/invoices/InvoicesPage';
 import { InvoicePrintPage } from '@/features/invoices/InvoicePrintPage';
 import { SetupPage } from '@/features/setup/SetupPage';
@@ -51,6 +52,16 @@ const reportsRoute = createRoute({
   component: ReportsPage,
 });
 
+const reportsPrintRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reports/print',
+  validateSearch: (search: Record<string, unknown>): { year: number; month: number } => ({
+    year: Number(search.year) || new Date().getFullYear(),
+    month: Number(search.month) || new Date().getMonth() + 1,
+  }),
+  component: MonthlyLedgerPrintPage,
+});
+
 const invoicesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/invoices',
@@ -87,6 +98,7 @@ const routeTree = rootRoute.addChildren([
   newVisitRoute,
   patientsRoute,
   reportsRoute,
+  reportsPrintRoute,
   invoicesRoute,
   invoicePrintRoute,
   setupRoute,

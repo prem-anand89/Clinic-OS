@@ -1,24 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { reportService, settlementService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import type { Paise } from '@/domain/money';
 import { fiscalYearOf, monthsOfFiscalYear, monthName, type FyMonth } from '@/domain/fiscalYear';
-import {
-  btnPrimary,
-  btnSecondary,
-  inputCls,
-  th,
-  thNum,
-  td,
-  tdNum,
-  Field,
-  RupeeInput,
-  SectionCard,
-  ErrorNote,
-} from '@/components/ui';
-import type { TherapistMonthRow } from '@/services/reportService';
+import { btnPrimary, btnSecondary, inputCls, Field, RupeeInput, SectionCard, ErrorNote } from '@/components/ui';
+import { MonthlyReportTable } from '@/components/MonthlyReportTable';
 
 export function ReportsPage() {
   const clinic = useClinic();
@@ -53,19 +42,6 @@ export function ReportsPage() {
     URL.revokeObjectURL(url);
   }
 
-  const cells = (r: TherapistMonthRow) => (
-    <>
-      <td className={tdNum}>{formatINR(r.billPaise)}</td>
-      <td className={tdNum}>{formatINR(r.bmSharePaise)}</td>
-      <td className={tdNum}>{formatINR(r.tdsPaise)}</td>
-      <td className={tdNum}>{formatINR(r.postTaxPaise)}</td>
-      <td className={tdNum}>{formatINR(r.hvPaise)}</td>
-      <td className={tdNum}>{r.adjustmentPaise !== 0 ? formatINR(r.adjustmentPaise) : '—'}</td>
-      <td className={tdNum}>{r.visitCount}</td>
-      <td className={tdNum}>{r.uniquePatients}</td>
-    </>
-  );
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
@@ -92,39 +68,18 @@ export function ReportsPage() {
           <button className={btnSecondary} onClick={downloadCsv}>
             Export CSV
           </button>
+          <Link
+            to="/reports/print"
+            search={{ year: selected.year, month: selected.month }}
+            className={btnSecondary}
+          >
+            Export as PDF
+          </Link>
         </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className={th}>Therapist</th>
-              <th className={thNum}>Bill Amount</th>
-              <th className={thNum}>BM Share</th>
-              <th className={thNum}>TDS Deducted</th>
-              <th className={thNum}>Post Tax BM</th>
-              <th className={thNum}>HV Share</th>
-              <th className={thNum}>Adjustments</th>
-              <th className={thNum}>Visits</th>
-              <th className={thNum}>Patients</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {(report?.rows ?? []).map((r) => (
-              <tr key={r.therapistId}>
-                <td className={td}>{r.therapistName}</td>
-                {cells(r)}
-              </tr>
-            ))}
-            {report && (
-              <tr className="bg-slate-50 font-semibold">
-                <td className={td}>Total</td>
-                {cells(report.total)}
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <MonthlyReportTable report={report} />
       </div>
 
       <p className="text-xs text-slate-500">
