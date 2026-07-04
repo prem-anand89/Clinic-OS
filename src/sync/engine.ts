@@ -120,6 +120,17 @@ export class SyncEngine {
     syncStatus.set({ pending: await db.outbox.count() });
   }
 
+  /**
+   * Stop retrying a permanently-failed local change (e.g. it keeps getting
+   * rejected by a server-side rule). The local row is untouched — only the
+   * queued sync attempt is dropped, so this device's copy will keep
+   * differing from the server for that row until it's edited again.
+   */
+  async discard(table: SyncedTable, rowId: string): Promise<void> {
+    await db.outbox.where('table').equals(table).and((e) => e.rowId === rowId).delete();
+    await this.updatePending();
+  }
+
   private async push() {
     const supabase = this.supabase!;
     const entries = await db.outbox.orderBy('seq').toArray();
