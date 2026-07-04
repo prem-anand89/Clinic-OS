@@ -12,6 +12,15 @@ export interface NewPatientInput {
   primaryCondition?: string | null;
 }
 
+export interface UpdatePatientInput {
+  mrno?: string;
+  name?: string;
+  age?: number | null;
+  sex?: 'M' | 'F' | 'Other' | null;
+  phone?: string | null;
+  primaryCondition?: string | null;
+}
+
 /**
  * MRNO policy (confirmed with user): normally the hospital issues the MRNO
  * and it is typed in; walk-ins without a hospital registration get an
@@ -57,6 +66,47 @@ export function createPatientService(repos: Repos) {
       };
       await repos.patients.put(patient);
       return patient;
+    },
+
+    /**
+     * Correct details entered wrong or left blank on a rushed first visit.
+     * Read-merge-put like hide/restore, so it works fully offline. MRNO
+     * uniqueness is re-checked (excluding this patient) if it's changing;
+     * mrnoSource is left untouched — it records how the patient was
+     * originally registered, not what the MRNO reads today.
+     */
+    async update(id: UUID, patch: UpdatePatientInput): Promise<Patient> {
+      const patient = await repos.patients.get(id);
+      if (!patient) throw new Error('Patient not found');
+
+      let mrno = patient.mrno;
+      if (patch.mrno !== undefined) {
+        const trimmed = patch.mrno.trim();
+        if (!trimmed) throw new Error('MRNO cannot be empty.');
+        if (trimmed !== patient.mrno) {
+          const existing = await repos.patients.getByMrno(patient.clinicId, trimmed);
+          if (existing && existing.id !== id) {
+            throw new Error(`MRNO ${trimmed} already exists (${existing.name}).`);
+          }
+          mrno = trimmed;
+        }
+      }
+
+      const updated: Patient = {
+        ...patient,
+        mrno,
+        name: patch.name !== undefined ? patch.name.trim() : patient.name,
+        age: patch.age !== undefined ? patch.age : patient.age,
+        sex: patch.sex !== undefined ? patch.sex : patient.sex,
+        phone: patch.phone !== undefined ? patch.phone?.trim() || null : patient.phone,
+        primaryCondition:
+          patch.primaryCondition !== undefined
+            ? patch.primaryCondition?.trim() || null
+            : patient.primaryCondition,
+        updatedAt: new Date().toISOString(),
+      };
+      await repos.patients.put(updated);
+      return updated;
     },
 
     /**

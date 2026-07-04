@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, patientService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import type { Patient } from '@/domain/types';
-import { inputCls, Pill, td, th } from '@/components/ui';
+import { btnPrimary, btnSecondary, ErrorNote, Field, inputCls, Pill, td, th } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import { toFriendlyMessage } from '@/lib/errors';
 
@@ -22,6 +22,7 @@ export function PatientsPage() {
   const [query, setQuery] = useState('');
   const [showHidden, setShowHidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Patient | null>(null);
   const sort = useSort<SortKey>('name');
 
   const all = useLiveQuery(() => repos.patients.list(clinic.id), [clinic.id]);
@@ -139,6 +140,12 @@ export function PatientsPage() {
                     Visit history
                   </Link>
                   <button
+                    className="ml-3 text-xs text-slate-400 hover:text-blue-600"
+                    onClick={() => setEditing(p)}
+                  >
+                    Edit
+                  </button>
+                  <button
                     className="ml-3 text-xs text-slate-400 hover:text-amber-600"
                     onClick={() => void hide(p)}
                   >
@@ -199,6 +206,96 @@ export function PatientsPage() {
           )}
         </div>
       )}
+
+      {editing && <EditPatientModal patient={editing} onClose={() => setEditing(null)} />}
+    </div>
+  );
+}
+
+function EditPatientModal({ patient, onClose }: { patient: Patient; onClose: () => void }) {
+  const [form, setForm] = useState(patient);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => setForm(patient), [patient]);
+
+  const set = (patch: Partial<Patient>) => setForm((f) => ({ ...f, ...patch }));
+
+  async function save() {
+    setError(null);
+    if (form.mrno.trim() !== patient.mrno && !confirm(`Change MRNO from ${patient.mrno} to ${form.mrno.trim()}? This may need to match hospital records.`)) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await patientService.update(patient.id, {
+        mrno: form.mrno,
+        name: form.name,
+        age: form.age,
+        sex: form.sex,
+        phone: form.phone,
+        primaryCondition: form.primaryCondition,
+      });
+      onClose();
+    } catch (e) {
+      setError(toFriendlyMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4">
+      <div className="w-full max-w-md space-y-4 rounded-lg bg-white p-5 shadow-lg">
+        <h2 className="text-sm font-semibold text-slate-900">Edit patient</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Name">
+            <input className={inputCls} value={form.name} onChange={(e) => set({ name: e.target.value })} />
+          </Field>
+          <Field label="MRNO">
+            <input className={inputCls} value={form.mrno} onChange={(e) => set({ mrno: e.target.value })} />
+          </Field>
+          <Field label="Age">
+            <input
+              type="number"
+              className={inputCls}
+              value={form.age ?? ''}
+              onChange={(e) => set({ age: e.target.value === '' ? null : Number(e.target.value) })}
+            />
+          </Field>
+          <Field label="Sex">
+            <select
+              className={inputCls}
+              value={form.sex ?? ''}
+              onChange={(e) => set({ sex: (e.target.value || null) as Patient['sex'] })}
+            >
+              <option value="">—</option>
+              <option value="M">M</option>
+              <option value="F">F</option>
+              <option value="Other">Other</option>
+            </select>
+          </Field>
+          <Field label="Phone">
+            <input className={inputCls} value={form.phone ?? ''} onChange={(e) => set({ phone: e.target.value || null })} />
+          </Field>
+          <Field label="Primary condition">
+            <input
+              className={inputCls}
+              value={form.primaryCondition ?? ''}
+              onChange={(e) => set({ primaryCondition: e.target.value || null })}
+            />
+          </Field>
+        </div>
+        <ErrorNote message={error} />
+        <div className="flex justify-end gap-2">
+          <button className={btnSecondary} onClick={onClose}>
+            Cancel
+          </button>
+          <button className={btnPrimary} disabled={busy} onClick={() => void save()}>
+            {busy ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
