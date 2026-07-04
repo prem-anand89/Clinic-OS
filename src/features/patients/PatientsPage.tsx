@@ -6,6 +6,7 @@ import { useClinic } from '@/app/clinicContext';
 import type { Patient } from '@/domain/types';
 import { inputCls, Pill, td, th } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
+import { toFriendlyMessage } from '@/lib/errors';
 
 type SortKey = 'name' | 'mrno' | 'age' | 'condition';
 
@@ -45,7 +46,7 @@ export function PatientsPage() {
     try {
       await patientService.hide(p.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toFriendlyMessage(e));
     }
   }
 
@@ -54,7 +55,7 @@ export function PatientsPage() {
     try {
       await patientService.restore(p.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toFriendlyMessage(e));
     }
   }
 
@@ -78,7 +79,7 @@ export function PatientsPage() {
       }
       await patientService.hardDelete(p.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toFriendlyMessage(e));
     }
   }
 

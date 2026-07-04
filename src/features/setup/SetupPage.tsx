@@ -21,6 +21,7 @@ import {
   td,
   tdNum,
 } from '@/components/ui';
+import { toFriendlyMessage } from '@/lib/errors';
 
 export function SetupPage() {
   return (
@@ -82,7 +83,7 @@ function DangerZone() {
       await db.delete();
       location.reload();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toFriendlyMessage(e));
       setBusy(false);
     }
   }
@@ -134,7 +135,7 @@ function ClinicProfile() {
     const path = `${clinic.id}/${field === 'logoPath' ? 'logo' : 'partner-logo'}-${Date.now()}.${file.name.split('.').pop()}`;
     const { error } = await supabase.storage.from('clinic-assets').upload(path, file);
     if (error) {
-      setError(`Upload failed: ${error.message}`);
+      setError(`Upload failed: ${toFriendlyMessage(error)}`);
       return;
     }
     const updated = { ...form, [field]: path, updatedAt: new Date().toISOString() };

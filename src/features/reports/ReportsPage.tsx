@@ -8,6 +8,7 @@ import type { Paise } from '@/domain/money';
 import { fiscalYearOf, monthsOfFiscalYear, monthName, type FyMonth } from '@/domain/fiscalYear';
 import { btnPrimary, btnSecondary, inputCls, Field, RupeeInput, SectionCard, ErrorNote } from '@/components/ui';
 import { MonthlyReportTable } from '@/components/MonthlyReportTable';
+import { toFriendlyMessage } from '@/lib/errors';
 
 export function ReportsPage() {
   const clinic = useClinic();
@@ -134,7 +135,7 @@ function SettlementCard({
       });
       setSaved(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toFriendlyMessage(e));
     }
   }
 

@@ -6,6 +6,7 @@ import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import { DUPLICATE_NAME_THRESHOLD, nameSimilarity } from '@/domain/nameSimilarity';
 import { effectivePricePerSession, type Patient, type UUID } from '@/domain/types';
+import { toFriendlyMessage } from '@/lib/errors';
 import {
   Field,
   inputCls,
@@ -146,7 +147,7 @@ export function NewVisitPage() {
       setCreatingPatient(false);
       if (created.primaryCondition) setCondition(created.primaryCondition);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toFriendlyMessage(e));
     }
   }
 
@@ -179,7 +180,7 @@ export function NewVisitPage() {
       });
       void navigate({ to: '/visits' });
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toFriendlyMessage(e));
     } finally {
       setBusy(false);
     }

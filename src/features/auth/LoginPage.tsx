@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { getSupabase } from '@/lib/supabase';
 import { hasSupabaseConfig } from '@/lib/env';
+import { toFriendlyMessage } from '@/lib/errors';
 import { Field, inputCls, btnPrimary, ErrorNote } from '@/components/ui';
 
 export function LoginPage() {
@@ -27,7 +28,7 @@ export function LoginPage() {
     setBusy(true);
     setError(null);
     const { error } = await getSupabase()!.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
+    if (error) setError(toFriendlyMessage(error));
     setBusy(false);
   }
 

@@ -7,6 +7,7 @@ import { formatINR } from '@/domain/money';
 import type { PaymentMode, Visit } from '@/domain/types';
 import { btnPrimary, btnSecondary, inputCls, th, thNum, td, tdNum, ErrorNote, Field } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
+import { toFriendlyMessage } from '@/lib/errors';
 
 const PAYMENT_MODES: PaymentMode[] = ['Cash', 'Card', 'UPI', 'Insurance'];
 
@@ -79,7 +80,7 @@ export function VisitsPage() {
       setInvoicing(null);
       void navigate({ to: '/invoices/$invoiceId/print', params: { invoiceId: invoice.id } });
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toFriendlyMessage(e));
     } finally {
       setBusy(false);
     }

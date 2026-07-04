@@ -11,6 +11,7 @@ import type {
   RowResolution,
 } from '@/services/importVisitsService';
 import { btnPrimary, btnSecondary, ErrorNote, SectionCard, StatTile } from '@/components/ui';
+import { toFriendlyMessage } from '@/lib/errors';
 import { ImportPreviewTable, allRowsResolved } from './ImportPreviewTable';
 
 type Stage =
@@ -48,7 +49,7 @@ export function ImportVisitsPage() {
       setNameOverrides({});
       setStage({ kind: 'preview', preview });
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toFriendlyMessage(e));
     } finally {
       setBusy(false);
     }
@@ -68,7 +69,7 @@ export function ImportVisitsPage() {
       );
       setStage({ kind: 'done', summary });
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toFriendlyMessage(e));
       setStage({ kind: 'preview', preview });
     }
   }
