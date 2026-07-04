@@ -1,21 +1,24 @@
 import { test, expect } from '@playwright/test';
 
-const hasSupabase = Boolean(process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY);
-
-test('app boots to login (or config notice without env)', async ({ page }) => {
+// White-screen guard: the app must render one of its two legitimate landing
+// states (the login page when Supabase is configured, or the setup notice
+// when it isn't). Asserting either — rather than guessing which from the
+// runner's env — keeps this robust whether or not a local .env is present,
+// while still catching a crash-on-boot / blank-page regression.
+test('app boots without crashing', async ({ page }) => {
   await page.goto('/');
-  if (hasSupabase) {
-    await expect(page.getByText('Patient visit ledger')).toBeVisible();
-    await expect(page.getByLabel('Email')).toBeVisible();
-  } else {
-    await expect(page.getByText('Supabase not configured')).toBeVisible();
-  }
+  await expect(
+    page.getByText('Patient visit ledger').or(page.getByText('Supabase not configured'))
+  ).toBeVisible();
 });
 
 // Full flow (login → patient → visit → invoice → report) needs a live Supabase
 // project with the seed + test users applied; enable once credentials exist.
 test.describe('authenticated flow', () => {
-  test.skip(!hasSupabase || !process.env.E2E_EMAIL, 'needs Supabase env + E2E_EMAIL/E2E_PASSWORD');
+  test.skip(
+    !process.env.VITE_SUPABASE_URL || !process.env.E2E_EMAIL,
+    'needs Supabase env + E2E_EMAIL/E2E_PASSWORD'
+  );
 
   test('login → log visit offline → sync → issue invoice', async ({ page, context }) => {
     await page.goto('/');
