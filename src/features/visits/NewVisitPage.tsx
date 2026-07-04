@@ -206,7 +206,7 @@ export function NewVisitPage() {
             </button>
           </div>
         ) : creatingPatient ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Name *">
               <input
                 className={inputCls}
@@ -303,7 +303,7 @@ export function NewVisitPage() {
       </SectionCard>
 
       <SectionCard title="Visit">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Date">
             <input
               type="date"

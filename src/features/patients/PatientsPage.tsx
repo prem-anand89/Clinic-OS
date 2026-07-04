@@ -248,7 +248,7 @@ function EditPatientModal({ patient, onClose }: { patient: Patient; onClose: () 
     <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4">
       <div className="w-full max-w-md space-y-4 rounded-lg bg-white p-5 shadow-lg">
         <h2 className="text-sm font-semibold text-slate-900">Edit patient</h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Name">
             <input className={inputCls} value={form.name} onChange={(e) => set({ name: e.target.value })} />
           </Field>
