@@ -6,6 +6,7 @@ import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import type { PaymentMode, Visit } from '@/domain/types';
 import { btnPrimary, btnSecondary, inputCls, th, thNum, td, tdNum, ErrorNote, Field } from '@/components/ui';
+import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 
 const PAYMENT_MODES: PaymentMode[] = ['Cash', 'Card', 'UPI', 'Insurance'];
 
@@ -46,6 +47,20 @@ export function VisitsPage() {
   const serviceName = useMemo(() => new Map((catalog ?? []).map((c) => [c.id, c.name])), [catalog]);
 
   const filteredPatient = search.patientId ? patientById.get(search.patientId) : undefined;
+
+  const sort = useSort<'date' | 'patient' | 'therapist' | 'bill' | 'bmShare' | 'postTax'>('date', 'desc');
+  const sortedVisits = applySort(
+    visits ?? [],
+    {
+      date: byString<Visit>((v) => v.visitDate),
+      patient: byString<Visit>((v) => patientById.get(v.patientId)?.name ?? ''),
+      therapist: byString<Visit>((v) => therapistName.get(v.therapistId) ?? ''),
+      bill: byNumber<Visit>((v) => v.actualBillPaise),
+      bmShare: byNumber<Visit>((v) => v.bmSharePaise),
+      postTax: byNumber<Visit>((v) => v.postTaxPaise),
+    },
+    sort
+  );
 
   async function issue() {
     if (!invoicing) return;
@@ -109,20 +124,20 @@ export function VisitsPage() {
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
-              <th className={th}>Date</th>
-              <th className={th}>Patient</th>
-              <th className={th}>Therapist</th>
+              <SortHeader label="Date" k="date" sort={sort} firstDir="desc" />
+              <SortHeader label="Patient" k="patient" sort={sort} />
+              <SortHeader label="Therapist" k="therapist" sort={sort} />
               <th className={th}>Service</th>
-              <th className={thNum}>Bill</th>
+              <SortHeader label="Bill" k="bill" sort={sort} numeric firstDir="desc" />
               <th className={thNum}>Adj.</th>
-              <th className={thNum}>BM Share</th>
-              <th className={thNum}>Post Tax</th>
+              <SortHeader label="BM Share" k="bmShare" sort={sort} numeric firstDir="desc" />
+              <SortHeader label="Post Tax" k="postTax" sort={sort} numeric firstDir="desc" />
               <th className={th}>Invoice</th>
               <th className={th}></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {(visits ?? []).map((v) => {
+            {sortedVisits.map((v) => {
               const p = patientById.get(v.patientId);
               return (
                 <tr key={v.id} className="hover:bg-slate-50">

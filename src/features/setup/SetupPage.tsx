@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { repos } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { getSupabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 import { formatINR } from '@/domain/money';
 import { effectivePricePerSession, type CatalogItem, type Clinic } from '@/domain/types';
 import type { TdsBasis } from '@/domain/split';
@@ -36,7 +37,77 @@ export function SetupPage() {
           Import historical visits from Excel →
         </Link>
       </SectionCard>
+      <DangerZone />
     </div>
+  );
+}
+
+function DangerZone() {
+  const clinic = useClinic();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function resetLocalCache() {
+    if (
+      !confirm(
+        "Clear this device's local copy of the data?\n\nNothing on the server is affected — the app reloads and downloads everything fresh. Use this after a wipe, or if this device is showing stale data."
+      )
+    )
+      return;
+    await db.delete();
+    location.reload();
+  }
+
+  async function wipeAll() {
+    setError(null);
+    const supabase = getSupabase();
+    if (!supabase || !navigator.onLine) {
+      setError('Wiping needs a connection — try again when online.');
+      return;
+    }
+    const typed = prompt(
+      'This permanently deletes ALL patients, visits, invoices, payments and settlements for this clinic, and resets invoice numbering to 0001. The catalog, therapists, and logins are kept.\n\nThis cannot be undone. Type WIPE to confirm:'
+    );
+    if (typed !== 'WIPE') return;
+    setBusy(true);
+    try {
+      const { data, error: rpcError } = await supabase.rpc('admin_wipe_clinic_data', {
+        p_clinic_id: clinic.id,
+      });
+      if (rpcError) throw new Error(rpcError.message);
+      const counts = data as { patients: number; visits: number; invoices: number };
+      alert(
+        `Wiped ${counts.patients} patients, ${counts.visits} visits, and ${counts.invoices} invoices. The app will now reload with a clean slate.\n\nOn any OTHER device that was already signed in, use "Reset local cache" once.`
+      );
+      await db.delete();
+      location.reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SectionCard title="Danger zone">
+      <p className="mb-3 text-xs text-slate-500">
+        For test-data cleanup and troubleshooting. Wiping is admin-only and enforced by the server.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button className={btnSecondary} onClick={() => void resetLocalCache()}>
+          Reset local cache on this device
+        </button>
+        <button
+          className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+          disabled={busy}
+          onClick={() => void wipeAll()}
+        >
+          {busy ? 'Wiping…' : 'Wipe ALL clinic data…'}
+        </button>
+      </div>
+      <div className="mt-2">
+        <ErrorNote message={error} />
+      </div>
+    </SectionCard>
   );
 }
 

@@ -57,6 +57,8 @@ export interface Patient {
   sex: 'M' | 'F' | 'Other' | null;
   phone: string | null;
   primaryCondition: string | null;
+  /** Set = hidden from search/pickers; visits keep resolving. Optional: older cached rows lack the key. */
+  deletedAt?: string | null;
   updatedAt: string;
 }
 

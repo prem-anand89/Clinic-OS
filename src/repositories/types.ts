@@ -37,10 +37,13 @@ export interface CatalogRepo {
 export interface PatientRepo {
   get(id: UUID): Promise<Patient | undefined>;
   getByMrno(clinicId: UUID, mrno: string): Promise<Patient | undefined>;
-  /** Case-insensitive match on MRNO prefix or name substring */
+  /** Case-insensitive match on MRNO prefix or name substring; hidden patients excluded */
   search(clinicId: UUID, query: string, limit?: number): Promise<Patient[]>;
+  /** Includes hidden patients — callers that render pickers should filter deletedAt */
   list(clinicId: UUID): Promise<Patient[]>;
   put(patient: Patient): Promise<void>;
+  /** Local cache removal after a server-side hard delete (not outboxed) */
+  removeLocal(id: UUID): Promise<void>;
 }
 
 export interface VisitFilter {

@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, visitService, patientService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
+import { DUPLICATE_NAME_THRESHOLD, nameSimilarity } from '@/domain/nameSimilarity';
 import { effectivePricePerSession, type Patient, type UUID } from '@/domain/types';
 import {
   Field,
@@ -115,6 +116,23 @@ export function NewVisitPage() {
   async function createPatient() {
     setError(null);
     try {
+      // Typo-level near-miss check (MRNO stays the true identifier) — warn
+      // before creating "Ramesh Kummar" when "Ramesh Kumar" already exists.
+      const existing = (await repos.patients.list(clinic.id)).filter((p) => !p.deletedAt);
+      let best: { name: string; mrno: string; score: number } | null = null;
+      for (const p of existing) {
+        const score = nameSimilarity(p.name, newPatient.name);
+        if (!best || score > best.score) best = { name: p.name, mrno: p.mrno, score };
+      }
+      if (
+        best &&
+        best.score >= DUPLICATE_NAME_THRESHOLD &&
+        !confirm(
+          `A patient named "${best.name}" (MRNO ${best.mrno}) already exists.\n\nCreate "${newPatient.name.trim()}" as a NEW patient anyway? If this is the same person, cancel and pick them from the search instead.`
+        )
+      ) {
+        return;
+      }
       const created = await patientService.create({
         clinicId: clinic.id,
         name: newPatient.name,

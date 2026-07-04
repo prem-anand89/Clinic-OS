@@ -84,6 +84,7 @@ function makeFakeRepos() {
       search: async () => [],
       list: async () => [...patients.values()],
       put: async (p) => void patients.set(p.id, p),
+      removeLocal: async (id) => void patients.delete(id),
     },
     visits: {
       get: async (id) => visits.get(id),

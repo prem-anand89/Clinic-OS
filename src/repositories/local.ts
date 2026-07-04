@@ -82,6 +82,7 @@ const patients: PatientRepo = {
     if (!q) return [];
     const all = await db.patients.where('clinicId').equals(clinicId).toArray();
     return all
+      .filter((p) => !p.deletedAt)
       .filter((p) => p.mrno.toLowerCase().startsWith(q) || p.name.toLowerCase().includes(q))
       .sort((a, b) => a.name.localeCompare(b.name))
       .slice(0, limit);
@@ -91,6 +92,9 @@ const patients: PatientRepo = {
     return all.sort((a, b) => a.name.localeCompare(b.name));
   },
   put: (p) => putWithOutbox('patients', p),
+  removeLocal: async (id) => {
+    await db.patients.delete(id);
+  },
 };
 
 const visits: VisitRepo = {

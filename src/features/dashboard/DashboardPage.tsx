@@ -7,6 +7,8 @@ import { formatINR } from '@/domain/money';
 import { monthName } from '@/domain/fiscalYear';
 import { Pill, SectionCard, StatTile, th, thNum, td, tdNum } from '@/components/ui';
 import { BarChart } from '@/components/BarChart';
+import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
+import type { OpenPackageRow } from '@/services/dashboardService';
 
 // Reference categorical palette — all 8 validated slots in fixed order,
 // assigned by index and never cycled (a 9th series would repeat hues and
@@ -37,6 +39,18 @@ export function DashboardPage() {
   const therapistNames = useMemo(
     () => [...new Set((trend ?? []).flatMap((r) => r.rows.map((row) => row.therapistName)))].sort(),
     [trend]
+  );
+
+  const packageSort = useSort<'days' | 'patient' | 'progress' | 'started'>('days', 'desc');
+  const sortedPackages = applySort(
+    openPackages ?? [],
+    {
+      days: byNumber<OpenPackageRow>((p) => p.daysSinceLastVisit),
+      patient: byString<OpenPackageRow>((p) => p.patientName),
+      progress: byNumber<OpenPackageRow>((p) => p.sessionsLogged / p.packageTotal),
+      started: byString<OpenPackageRow>((p) => p.startedOn),
+    },
+    packageSort
   );
 
   return (
@@ -115,17 +129,17 @@ export function DashboardPage() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead>
               <tr>
-                <th className={th}>Patient</th>
+                <SortHeader label="Patient" k="patient" sort={packageSort} />
                 <th className={th}>Service</th>
-                <th className={thNum}>Progress</th>
-                <th className={th}>Started</th>
+                <SortHeader label="Progress" k="progress" sort={packageSort} numeric />
+                <SortHeader label="Started" k="started" sort={packageSort} />
                 <th className={th}>Last visit</th>
-                <th className={thNum}>Days since</th>
+                <SortHeader label="Days since" k="days" sort={packageSort} numeric firstDir="desc" />
                 <th className={th}></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {(openPackages ?? []).map((p) => (
+              {sortedPackages.map((p) => (
                 <tr key={p.packageGroupId} className="hover:bg-slate-50">
                   <td className={td}>
                     {p.patientName} <span className="text-xs text-slate-400">{p.mrno}</span>

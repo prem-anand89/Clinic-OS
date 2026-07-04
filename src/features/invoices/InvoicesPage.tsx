@@ -4,8 +4,9 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, paymentService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
-import type { PaymentStatus } from '@/domain/types';
-import { Pill, th, thNum, td, tdNum } from '@/components/ui';
+import type { Invoice, PaymentStatus } from '@/domain/types';
+import { Pill, th, td, tdNum } from '@/components/ui';
+import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 
 export function InvoicesPage() {
   const clinic = useClinic();
@@ -24,6 +25,20 @@ export function InvoicesPage() {
     await paymentService.setStatus(invoiceId, clinic.id, current === 'paid' ? 'outstanding' : 'paid');
   }
 
+  const sort = useSort<'no' | 'date' | 'patient' | 'total' | 'status'>('date', 'desc');
+  const sortedInvoices = applySort(
+    invoices ?? [],
+    {
+      no: byNumber<Invoice>((inv) => inv.seq),
+      date: byString<Invoice>((inv) => inv.issuedAt),
+      patient: byString<Invoice>((inv) => inv.patientSnapshot.name),
+      total: byNumber<Invoice>((inv) => inv.totalPaise),
+      // 'outstanding' sorts before 'paid', so ascending surfaces unpaid first
+      status: byString<Invoice>((inv) => statusByInvoiceId.get(inv.id) ?? 'paid'),
+    },
+    sort
+  );
+
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-semibold text-slate-900">Invoices</h1>
@@ -31,18 +46,18 @@ export function InvoicesPage() {
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
-              <th className={th}>Invoice №</th>
-              <th className={th}>Date</th>
-              <th className={th}>Patient</th>
+              <SortHeader label="Invoice №" k="no" sort={sort} firstDir="desc" />
+              <SortHeader label="Date" k="date" sort={sort} firstDir="desc" />
+              <SortHeader label="Patient" k="patient" sort={sort} />
               <th className={th}>MRNO</th>
-              <th className={thNum}>Total</th>
+              <SortHeader label="Total" k="total" sort={sort} numeric firstDir="desc" />
               <th className={th}>Mode</th>
-              <th className={th}>Status</th>
+              <SortHeader label="Status" k="status" sort={sort} />
               <th className={th}></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {(invoices ?? []).map((inv) => {
+            {sortedInvoices.map((inv) => {
               const status = statusByInvoiceId.get(inv.id) ?? 'paid';
               return (
                 <tr key={inv.id} className="hover:bg-slate-50">
