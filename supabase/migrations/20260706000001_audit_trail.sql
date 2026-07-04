@@ -8,32 +8,32 @@
 -- settlements), so no new triggers are needed — just the columns and one
 -- function change.
 -- ---------------------------------------------------------------------------
-alter table public.clinics add column created_by uuid references auth.users (id);
-alter table public.clinics add column updated_by uuid references auth.users (id);
+alter table public.clinics add column if not exists created_by uuid references auth.users (id);
+alter table public.clinics add column if not exists updated_by uuid references auth.users (id);
 
-alter table public.clinic_members add column created_by uuid references auth.users (id);
-alter table public.clinic_members add column updated_by uuid references auth.users (id);
+alter table public.clinic_members add column if not exists created_by uuid references auth.users (id);
+alter table public.clinic_members add column if not exists updated_by uuid references auth.users (id);
 
-alter table public.therapists add column created_by uuid references auth.users (id);
-alter table public.therapists add column updated_by uuid references auth.users (id);
+alter table public.therapists add column if not exists created_by uuid references auth.users (id);
+alter table public.therapists add column if not exists updated_by uuid references auth.users (id);
 
-alter table public.service_catalog add column created_by uuid references auth.users (id);
-alter table public.service_catalog add column updated_by uuid references auth.users (id);
+alter table public.service_catalog add column if not exists created_by uuid references auth.users (id);
+alter table public.service_catalog add column if not exists updated_by uuid references auth.users (id);
 
-alter table public.patients add column created_by uuid references auth.users (id);
-alter table public.patients add column updated_by uuid references auth.users (id);
+alter table public.patients add column if not exists created_by uuid references auth.users (id);
+alter table public.patients add column if not exists updated_by uuid references auth.users (id);
 
-alter table public.invoices add column created_by uuid references auth.users (id);
-alter table public.invoices add column updated_by uuid references auth.users (id);
+alter table public.invoices add column if not exists created_by uuid references auth.users (id);
+alter table public.invoices add column if not exists updated_by uuid references auth.users (id);
 
 -- visits.updated_by already exists (init.sql); only created_by is new here.
-alter table public.visits add column created_by uuid references auth.users (id);
+alter table public.visits add column if not exists created_by uuid references auth.users (id);
 
-alter table public.invoice_payments add column created_by uuid references auth.users (id);
-alter table public.invoice_payments add column updated_by uuid references auth.users (id);
+alter table public.invoice_payments add column if not exists created_by uuid references auth.users (id);
+alter table public.invoice_payments add column if not exists updated_by uuid references auth.users (id);
 
-alter table public.settlements add column created_by uuid references auth.users (id);
-alter table public.settlements add column updated_by uuid references auth.users (id);
+alter table public.settlements add column if not exists created_by uuid references auth.users (id);
+alter table public.settlements add column if not exists updated_by uuid references auth.users (id);
 
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
