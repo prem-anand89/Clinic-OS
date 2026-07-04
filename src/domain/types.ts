@@ -18,7 +18,21 @@ export interface Clinic {
   taxPct: number;
   tdsBasis: TdsBasis;
   fyStartMonth: number;
+  /** Abbreviation for the clinic's own share (default "BM"). Optional so existing rows are unaffected. */
+  ownShareLabel?: string | null;
+  /** Abbreviation for the partner hospital's share (default "HV"). */
+  partnerShareLabel?: string | null;
   updatedAt: string;
+}
+
+/** Resolve a clinic's share-label abbreviations, defaulting to BM/HV. */
+export function clinicShareLabels(
+  clinic: Pick<Clinic, 'ownShareLabel' | 'partnerShareLabel'>
+): { own: string; partner: string } {
+  return {
+    own: clinic.ownShareLabel?.trim() || 'BM',
+    partner: clinic.partnerShareLabel?.trim() || 'HV',
+  };
 }
 
 export interface Therapist {

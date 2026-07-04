@@ -6,6 +6,7 @@ import { useClinic } from '@/app/clinicContext';
 import { getSupabase } from '@/lib/supabase';
 import { formatINR } from '@/domain/money';
 import { fiscalYearOf, monthDateRange, monthName } from '@/domain/fiscalYear';
+import { clinicShareLabels } from '@/domain/types';
 import { btnPrimary, btnSecondary } from '@/components/ui';
 import { MonthlyReportTable } from '@/components/MonthlyReportTable';
 
@@ -23,6 +24,7 @@ function dayOfWeek(visitDate: string): string {
 export function MonthlyLedgerPrintPage() {
   const clinic = useClinic();
   const { year, month } = useSearch({ strict: false }) as { year: number; month: number };
+  const labels = clinicShareLabels(clinic);
   const period = { year, month };
   const fy = fiscalYearOf(new Date(period.year, period.month - 1, 1), clinic.fyStartMonth);
 
@@ -156,7 +158,7 @@ export function MonthlyLedgerPrintPage() {
         {/* Per-therapist summary */}
         <h2 className="mt-8 text-sm font-bold text-slate-900">Monthly Summary</h2>
         <div className="mt-2 overflow-x-auto">
-          <MonthlyReportTable report={report} />
+          <MonthlyReportTable report={report} own={labels.own} partner={labels.partner} />
         </div>
 
         <footer className="mt-8 border-t border-slate-200 pt-3 text-xs text-slate-400">

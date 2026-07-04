@@ -5,6 +5,7 @@ import { dashboardService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import { monthName } from '@/domain/fiscalYear';
+import { clinicShareLabels } from '@/domain/types';
 import { Pill, SectionCard, StatTile, th, thNum, td, tdNum } from '@/components/ui';
 import { BarChart } from '@/components/BarChart';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
@@ -26,6 +27,7 @@ const SERIES_COLORS = [
 
 export function DashboardPage() {
   const clinic = useClinic();
+  const labels = clinicShareLabels(clinic);
 
   const trend = useLiveQuery(() => dashboardService.revenueTrend(clinic.id), [clinic.id]);
   const openPackages = useLiveQuery(() => dashboardService.openPackages(clinic.id), [clinic.id]);
@@ -57,13 +59,13 @@ export function DashboardPage() {
     <div className="space-y-6">
       <h1 className="text-lg font-semibold text-slate-900">Dashboard</h1>
 
-      <SectionCard title="Revenue trend — last 6 months (Post-Tax BM)">
+      <SectionCard title={`Revenue trend — last 6 months (Post-Tax ${labels.own})`}>
         {trend && (
           <BarChart
             categories={categories}
             series={[
               {
-                label: 'Post-Tax BM',
+                label: `Post-Tax ${labels.own}`,
                 color: SERIES_COLORS[0],
                 values: trend.map((r) => r.total.postTaxPaise),
               },
@@ -77,10 +79,10 @@ export function DashboardPage() {
               <tr>
                 <th className={th}>Month</th>
                 <th className={thNum}>Bill</th>
-                <th className={thNum}>BM Share</th>
+                <th className={thNum}>{labels.own} Share</th>
                 <th className={thNum}>TDS</th>
                 <th className={thNum}>Post Tax</th>
-                <th className={thNum}>HV</th>
+                <th className={thNum}>{labels.partner}</th>
                 <th className={thNum}>Visits</th>
                 <th className={thNum}>Patients</th>
               </tr>
@@ -103,7 +105,7 @@ export function DashboardPage() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Therapist comparison — Post-Tax BM">
+      <SectionCard title={`Therapist comparison — Post-Tax ${labels.own}`}>
         {trend && therapistNames.length > 0 && (
           <BarChart
             categories={categories}

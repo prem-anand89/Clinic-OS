@@ -127,14 +127,14 @@ export function createReportService(repos: Repos) {
       };
     },
 
-    toCsv(report: MonthlyReport): string {
+    toCsv(report: MonthlyReport, labels: { own: string; partner: string } = { own: 'BM', partner: 'HV' }): string {
       const header = [
         'Therapist',
         'Bill Amount',
-        'BM Share',
+        `${labels.own} Share`,
         'TDS Deducted',
-        'Post Tax BM',
-        'HV Share',
+        `Post Tax ${labels.own}`,
+        `${labels.partner} Share`,
         'Shared',
         'Net',
         'Visits',

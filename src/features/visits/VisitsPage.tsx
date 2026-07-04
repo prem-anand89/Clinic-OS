@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, invoiceService, paymentService, visitService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
-import type { PaymentMode, Therapist, Visit } from '@/domain/types';
+import { clinicShareLabels, type PaymentMode, type Therapist, type Visit } from '@/domain/types';
 import { btnPrimary, btnSecondary, inputCls, th, thNum, td, tdNum, ErrorNote, Field } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import { toFriendlyMessage } from '@/lib/errors';
@@ -13,6 +13,7 @@ const PAYMENT_MODES: PaymentMode[] = ['Cash', 'Card', 'UPI', 'Insurance'];
 
 export function VisitsPage() {
   const clinic = useClinic();
+  const labels = clinicShareLabels(clinic);
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { patientId?: string };
 
@@ -132,7 +133,7 @@ export function VisitsPage() {
               <th className={th}>Service</th>
               <SortHeader label="Bill" k="bill" sort={sort} numeric firstDir="desc" />
               <th className={thNum}>Adj.</th>
-              <SortHeader label="BM Share" k="bmShare" sort={sort} numeric firstDir="desc" />
+              <SortHeader label={`${labels.own} Share`} k="bmShare" sort={sort} numeric firstDir="desc" />
               <SortHeader label="Post Tax" k="postTax" sort={sort} numeric firstDir="desc" />
               <th className={th}>Invoice</th>
               <th className={th}></th>

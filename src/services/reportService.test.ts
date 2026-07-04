@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createReportService } from './reportService';
 import type { Repos, VisitFilter } from '@/repositories/types';
-import type { Therapist, Visit } from '@/domain/types';
+import { clinicShareLabels, type Therapist, type Visit } from '@/domain/types';
 import { roundToRupeeHalfUp, rupeesToPaise as rs } from '@/domain/money';
 
 const CLINIC = 'clinic-1';
@@ -119,5 +119,36 @@ describe('reportService.monthly — therapist split', () => {
     expect(report.total.sharedPaise).toBe(0);
     for (const r of report.rows) expect(r.netPostTaxPaise).toBe(r.postTaxPaise);
     expect(report.total.netPostTaxPaise).toBe(report.total.postTaxPaise);
+  });
+});
+
+describe('reportService.toCsv — configurable share labels', () => {
+  it('defaults the share columns to BM/HV', async () => {
+    const report = await createReportService(makeFakeRepos([visit({})])).monthly(CLINIC, JULY);
+    const header = createReportService(makeFakeRepos([])).toCsv(report).split('\n')[0];
+    expect(header).toContain('"BM Share"');
+    expect(header).toContain('"Post Tax BM"');
+    expect(header).toContain('"HV Share"');
+  });
+
+  it('renders the clinic-configured labels when provided', async () => {
+    const report = await createReportService(makeFakeRepos([visit({})])).monthly(CLINIC, JULY);
+    const header = createReportService(makeFakeRepos([]))
+      .toCsv(report, { own: 'ZM', partner: 'CityHosp' })
+      .split('\n')[0];
+    expect(header).toContain('"ZM Share"');
+    expect(header).toContain('"Post Tax ZM"');
+    expect(header).toContain('"CityHosp Share"');
+  });
+});
+
+describe('clinicShareLabels', () => {
+  it('defaults to BM/HV when unset or blank', () => {
+    expect(clinicShareLabels({ ownShareLabel: null, partnerShareLabel: undefined })).toEqual({ own: 'BM', partner: 'HV' });
+    expect(clinicShareLabels({ ownShareLabel: '  ', partnerShareLabel: '' })).toEqual({ own: 'BM', partner: 'HV' });
+  });
+
+  it('uses configured labels, trimmed', () => {
+    expect(clinicShareLabels({ ownShareLabel: ' ZM ', partnerShareLabel: 'CH' })).toEqual({ own: 'ZM', partner: 'CH' });
   });
 });

@@ -6,12 +6,14 @@ import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import type { Paise } from '@/domain/money';
 import { fiscalYearOf, monthsOfFiscalYear, monthName, type FyMonth } from '@/domain/fiscalYear';
+import { clinicShareLabels } from '@/domain/types';
 import { btnPrimary, btnSecondary, inputCls, Field, RupeeInput, SectionCard, ErrorNote } from '@/components/ui';
 import { MonthlyReportTable } from '@/components/MonthlyReportTable';
 import { toFriendlyMessage } from '@/lib/errors';
 
 export function ReportsPage() {
   const clinic = useClinic();
+  const labels = clinicShareLabels(clinic);
   const currentFy = fiscalYearOf(new Date(), clinic.fyStartMonth);
   const [fyStartYear, setFyStartYear] = useState(currentFy.startYear);
   const now = new Date();
@@ -34,7 +36,7 @@ export function ReportsPage() {
 
   function downloadCsv() {
     if (!report) return;
-    const blob = new Blob([reportService.toCsv(report)], { type: 'text/csv' });
+    const blob = new Blob([reportService.toCsv(report, labels)], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -80,12 +82,14 @@ export function ReportsPage() {
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-        <MonthlyReportTable report={report} showShared />
+        <MonthlyReportTable report={report} showShared own={labels.own} partner={labels.partner} />
       </div>
 
       <p className="text-xs text-slate-500">
         Patients = unique patients in the month, not visit count. TDS basis for new visits:{' '}
-        {clinic.tdsBasis === 'gross_bill' ? '10%-of-gross-bill (matches the HV sheet)' : 'on BM share'}
+        {clinic.tdsBasis === 'gross_bill'
+          ? `10%-of-gross-bill (matches the ${labels.partner} sheet)`
+          : `on ${labels.own} share`}
         ; each visit keeps the basis and rates that were active when it was billed.
       </p>
 
@@ -93,6 +97,7 @@ export function ReportsPage() {
         clinicId={clinic.id}
         month={selected}
         expectedPaise={report?.total.postTaxPaise ?? null}
+        labels={labels}
       />
     </div>
   );
@@ -102,10 +107,12 @@ function SettlementCard({
   clinicId,
   month,
   expectedPaise,
+  labels,
 }: {
   clinicId: string;
   month: FyMonth;
   expectedPaise: Paise | null;
+  labels: { own: string; partner: string };
 }) {
   const settlement = useLiveQuery(
     () => settlementService.get(clinicId, month.year, month.month),
@@ -142,14 +149,14 @@ function SettlementCard({
   const variancePaise = amountPaise != null && expectedPaise != null ? amountPaise - expectedPaise : null;
 
   return (
-    <SectionCard title={`HV settlement — ${monthName(month.month)} ${month.year}`}>
+    <SectionCard title={`${labels.partner} settlement — ${monthName(month.month)} ${month.year}`}>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Field label={`Expected (computed Post Tax BM)${expectedPaise == null ? '' : `: ${formatINR(expectedPaise)}`}`}>
+        <Field label={`Expected (computed Post Tax ${labels.own})${expectedPaise == null ? '' : `: ${formatINR(expectedPaise)}`}`}>
           <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             {expectedPaise != null ? formatINR(expectedPaise) : '—'}
           </div>
         </Field>
-        <Field label="Amount received from HV">
+        <Field label={`Amount received from ${labels.partner}`}>
           <RupeeInput valuePaise={amountPaise} onChange={setAmountPaise} />
         </Field>
         <Field label="Received date">

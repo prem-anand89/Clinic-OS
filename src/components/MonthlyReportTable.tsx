@@ -11,9 +11,13 @@ import type { MonthlyReport, TherapistMonthRow } from '@/services/reportService'
 export function MonthlyReportTable({
   report,
   showShared = false,
+  own = 'BM',
+  partner = 'HV',
 }: {
   report: MonthlyReport | undefined;
   showShared?: boolean;
+  own?: string;
+  partner?: string;
 }) {
   const cells = (r: TherapistMonthRow) => (
     <>
@@ -35,10 +39,10 @@ export function MonthlyReportTable({
         <tr>
           <th className={th}>Therapist</th>
           <th className={thNum}>Bill Amount</th>
-          <th className={thNum}>BM Share</th>
+          <th className={thNum}>{own} Share</th>
           <th className={thNum}>TDS Deducted</th>
-          <th className={thNum}>Post Tax BM</th>
-          <th className={thNum}>HV Share</th>
+          <th className={thNum}>Post Tax {own}</th>
+          <th className={thNum}>{partner} Share</th>
           {showShared && <th className={thNum}>Shared</th>}
           {showShared && <th className={thNum}>Net</th>}
           <th className={thNum}>Visits</th>

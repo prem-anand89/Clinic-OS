@@ -6,7 +6,7 @@ import { useClinic } from '@/app/clinicContext';
 import { getSupabase } from '@/lib/supabase';
 import { db } from '@/lib/db';
 import { formatINR } from '@/domain/money';
-import { effectivePricePerSession, type CatalogItem, type Clinic } from '@/domain/types';
+import { clinicShareLabels, effectivePricePerSession, type CatalogItem, type Clinic } from '@/domain/types';
 import type { TdsBasis } from '@/domain/split';
 import {
   Field,
@@ -135,6 +135,7 @@ function ClinicProfile() {
   const [form, setForm] = useState<Clinic>(clinic);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const labels = clinicShareLabels(form);
 
   useEffect(() => setForm(clinic), [clinic]);
 
@@ -199,7 +200,23 @@ function ClinicProfile() {
             onChange={(e) => set({ partnerHospitalName: e.target.value || null })}
           />
         </Field>
-        <Field label="Clinic share % (BM split)">
+        <Field label="Own share label (report column, e.g. BM)">
+          <input
+            className={inputCls}
+            placeholder="BM"
+            value={form.ownShareLabel ?? ''}
+            onChange={(e) => set({ ownShareLabel: e.target.value || null })}
+          />
+        </Field>
+        <Field label="Partner share label (report column, e.g. HV)">
+          <input
+            className={inputCls}
+            placeholder="HV"
+            value={form.partnerShareLabel ?? ''}
+            onChange={(e) => set({ partnerShareLabel: e.target.value || null })}
+          />
+        </Field>
+        <Field label={`Clinic share % (${labels.own} split)`}>
           <input
             type="number"
             className={inputCls}
@@ -221,7 +238,7 @@ function ClinicProfile() {
             value={form.tdsBasis}
             onChange={(e) => set({ tdsBasis: e.target.value as TdsBasis })}
           >
-            <option value="gross_bill">10% of gross bill (matches HV sheet)</option>
+            <option value="gross_bill">10% of gross bill (matches {labels.partner} sheet)</option>
             <option value="bm_share">On clinic share only</option>
           </select>
         </Field>
