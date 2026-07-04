@@ -23,6 +23,7 @@ export function MonthlyReportTable({
       <td className={tdNum}>{formatINR(r.postTaxPaise)}</td>
       <td className={tdNum}>{formatINR(r.hvPaise)}</td>
       {showShared && <td className={tdNum}>{r.sharedPaise !== 0 ? formatINR(r.sharedPaise) : '—'}</td>}
+      {showShared && <td className={tdNum}>{formatINR(r.netPostTaxPaise)}</td>}
       <td className={tdNum}>{r.visitCount}</td>
       <td className={tdNum}>{r.uniquePatients}</td>
     </>
@@ -39,6 +40,7 @@ export function MonthlyReportTable({
           <th className={thNum}>Post Tax BM</th>
           <th className={thNum}>HV Share</th>
           {showShared && <th className={thNum}>Shared</th>}
+          {showShared && <th className={thNum}>Net</th>}
           <th className={thNum}>Visits</th>
           <th className={thNum}>Patients</th>
         </tr>

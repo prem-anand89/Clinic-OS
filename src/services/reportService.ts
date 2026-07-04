@@ -1,6 +1,6 @@
 import type { UUID } from '@/domain/types';
 import type { Paise } from '@/domain/money';
-import { paiseToRupees } from '@/domain/money';
+import { paiseToRupees, roundToRupeeHalfUp } from '@/domain/money';
 import { monthDateRange, monthName, type FyMonth } from '@/domain/fiscalYear';
 import type { Repos } from '@/repositories/types';
 
@@ -20,6 +20,14 @@ export interface TherapistMonthRow {
    * row — purely an internal redistribution, never touches billed totals.
    */
   sharedPaise: Paise;
+  /**
+   * Post-Tax BM after splits: this therapist's own Post-Tax BM, minus what
+   * they gave away and plus what they received via same-visit splits — the
+   * actual take-home figure. Splits are applied to Post-Tax BM directly, not
+   * derived from sharedPaise (which is a share of the billed amount, a
+   * different base). Total always equals total.postTaxPaise unchanged.
+   */
+  netPostTaxPaise: Paise;
   visitCount: number;
   /** COUNT(DISTINCT mrno) — unique patients, not visit count (spec §5.2) */
   uniquePatients: number;
@@ -61,6 +69,7 @@ export function createReportService(repos: Repos) {
         hvPaise: 0,
         adjustmentPaise: 0,
         sharedPaise: 0,
+        netPostTaxPaise: 0,
         visitCount: 0,
         uniquePatients: 0,
       });
@@ -79,6 +88,7 @@ export function createReportService(repos: Repos) {
           r.postTaxPaise += v.postTaxPaise;
           r.hvPaise += v.hvPaise;
           r.adjustmentPaise += v.adjustmentPaise;
+          r.netPostTaxPaise += v.postTaxPaise;
           r.visitCount += 1;
         }
         if (!patientsByTherapist.has(v.therapistId)) patientsByTherapist.set(v.therapistId, new Set());
@@ -88,15 +98,22 @@ export function createReportService(repos: Repos) {
       for (const [id, set] of patientsByTherapist) rowsById.get(id)!.uniquePatients = set.size;
       total.uniquePatients = allPatients.size;
 
-      // Internal therapist splits: move a share of the billed amount from the
-      // primary to an assisting therapist. Nets to zero, so no billed total
-      // above is affected — this is attribution only.
+      // Internal therapist splits: move a share of the billed amount (Shared)
+      // and, separately, of Post-Tax BM (Net) from the primary to an
+      // assisting therapist. Both round to whole rupees like every other
+      // money figure in the app; both net to zero, so no billed total above
+      // is affected — this is attribution only.
       for (const v of visits) {
         if (!v.sharedTherapistId || !v.sharedPct) continue;
-        const sharedAmt = Math.round((v.actualBillPaise * v.sharedPct) / 100);
+        const sharedAmt = roundToRupeeHalfUp((v.actualBillPaise * v.sharedPct) / 100);
         rowFor(v.therapistId).sharedPaise -= sharedAmt;
         rowFor(v.sharedTherapistId).sharedPaise += sharedAmt;
         // total.sharedPaise stays 0 — the − and + are equal and opposite
+
+        const sharedPostTaxAmt = roundToRupeeHalfUp((v.postTaxPaise * v.sharedPct) / 100);
+        rowFor(v.therapistId).netPostTaxPaise -= sharedPostTaxAmt;
+        rowFor(v.sharedTherapistId).netPostTaxPaise += sharedPostTaxAmt;
+        // total.netPostTaxPaise stays equal to total.postTaxPaise
       }
 
       const rows = [...rowsById.values()].sort((a, b) =>
@@ -119,6 +136,7 @@ export function createReportService(repos: Repos) {
         'Post Tax BM',
         'HV Share',
         'Shared',
+        'Net',
         'Visits',
         'Patients',
       ];
@@ -130,6 +148,7 @@ export function createReportService(repos: Repos) {
         paiseToRupees(r.postTaxPaise),
         paiseToRupees(r.hvPaise),
         paiseToRupees(r.sharedPaise),
+        paiseToRupees(r.netPostTaxPaise),
         r.visitCount,
         r.uniquePatients,
       ];
