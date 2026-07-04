@@ -55,8 +55,26 @@ function DangerZone() {
       )
     )
       return;
-    await db.delete();
-    location.reload();
+    setError(null);
+    setBusy(true);
+    try {
+      // db.delete() can hang indefinitely if another connection (another open
+      // tab, or this page's own live queries) is holding the database — in
+      // which case the browser silently "blocks" the delete. Race it against a
+      // timeout so a stuck delete surfaces as an actionable error instead of
+      // the button appearing to do nothing.
+      await Promise.race([
+        db.delete(),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('blocked')), 5000)),
+      ]);
+      location.reload();
+    } catch (e) {
+      console.error('reset local cache failed', e);
+      setError(
+        'Could not clear the local data automatically. Close any other Clinic-OS tabs or windows, then reload this page and try again.'
+      );
+      setBusy(false);
+    }
   }
 
   async function wipeAll() {
@@ -94,8 +112,8 @@ function DangerZone() {
         For test-data cleanup and troubleshooting. Wiping is admin-only and enforced by the server.
       </p>
       <div className="flex flex-wrap gap-2">
-        <button className={btnSecondary} onClick={() => void resetLocalCache()}>
-          Reset local cache on this device
+        <button className={btnSecondary} disabled={busy} onClick={() => void resetLocalCache()}>
+          {busy ? 'Working…' : 'Reset local cache on this device'}
         </button>
         <button
           className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
