@@ -82,6 +82,14 @@ export interface Visit {
   packageTotal: number | null;
   /** Groups the sessions of one package; therapist may change mid-package */
   packageGroupId: UUID | null;
+  /**
+   * Optional internal split: a share of this visit's billed amount is
+   * credited to an assisting therapist in reporting only. Never changes the
+   * billed amount or the primary therapist (the hospital reconciles those).
+   * Optional so existing Visit rows/construction sites are unaffected.
+   */
+  sharedTherapistId?: UUID | null;
+  sharedPct?: number | null;
   /** Rate snapshots — historical reports stay correct if clinic rates change */
   bmSplitPct: number;
   taxPct: number;

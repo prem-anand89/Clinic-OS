@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { repos, invoiceService, paymentService } from '@/services';
+import { repos, invoiceService, paymentService, visitService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
-import type { PaymentMode, Visit } from '@/domain/types';
+import type { PaymentMode, Therapist, Visit } from '@/domain/types';
 import { btnPrimary, btnSecondary, inputCls, th, thNum, td, tdNum, ErrorNote, Field } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import { toFriendlyMessage } from '@/lib/errors';
@@ -20,6 +20,7 @@ export function VisitsPage() {
   const [to, setTo] = useState('');
   const [therapistId, setTherapistId] = useState('');
   const [invoicing, setInvoicing] = useState<Visit | null>(null);
+  const [splitting, setSplitting] = useState<Visit | null>(null);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('Cash');
   const [paidNow, setPaidNow] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,7 +148,14 @@ export function VisitsPage() {
                     <div>{p?.name ?? '—'}</div>
                     <div className="text-xs text-slate-400">{p?.mrno}</div>
                   </td>
-                  <td className={td}>{therapistName.get(v.therapistId) ?? '—'}</td>
+                  <td className={td}>
+                    {therapistName.get(v.therapistId) ?? '—'}
+                    {v.sharedTherapistId && (
+                      <div className="text-xs text-emerald-600" title="Internal revenue split">
+                        ⇄ {therapistName.get(v.sharedTherapistId) ?? '—'} {v.sharedPct}%
+                      </div>
+                    )}
+                  </td>
                   <td className={td}>
                     {serviceName.get(v.serviceCatalogId) ?? '—'}
                     {v.sessionIndex && v.packageTotal && (
@@ -187,17 +195,31 @@ export function VisitsPage() {
                     )}
                   </td>
                   <td className={td}>
-                    {!v.invoiceId && (
-                      <button
-                        className="text-xs text-slate-400 hover:text-red-600"
-                        title="Delete visit"
-                        onClick={() => {
-                          if (confirm('Delete this visit?')) void repos.visits.softDelete(v.id);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    )}
+                    <div className="flex gap-3">
+                      {v.actualBillPaise > 0 && (
+                        <button
+                          className="text-xs text-slate-400 hover:text-emerald-600"
+                          title="Share this visit's revenue with another therapist"
+                          onClick={() => {
+                            setError(null);
+                            setSplitting(v);
+                          }}
+                        >
+                          {v.sharedTherapistId ? 'Edit split' : 'Split'}
+                        </button>
+                      )}
+                      {!v.invoiceId && (
+                        <button
+                          className="text-xs text-slate-400 hover:text-red-600"
+                          title="Delete visit"
+                          onClick={() => {
+                            if (confirm('Delete this visit?')) void repos.visits.softDelete(v.id);
+                          }}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
@@ -259,6 +281,117 @@ export function VisitsPage() {
           </div>
         </div>
       )}
+
+      {splitting && (
+        <SplitModal
+          visit={splitting}
+          therapists={(therapists ?? []).filter((t) => t.id !== splitting.therapistId)}
+          primaryName={therapistName.get(splitting.therapistId) ?? '—'}
+          onClose={() => setSplitting(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function SplitModal({
+  visit,
+  therapists,
+  primaryName,
+  onClose,
+}: {
+  visit: Visit;
+  therapists: Therapist[];
+  primaryName: string;
+  onClose: () => void;
+}) {
+  const [sharedTherapistId, setSharedTherapistId] = useState(visit.sharedTherapistId ?? '');
+  const [pct, setPct] = useState(visit.sharedPct != null ? String(visit.sharedPct) : '');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const pctNum = Number(pct);
+  const preview =
+    pctNum > 0 && pctNum <= 100 ? Math.round((visit.actualBillPaise * pctNum) / 100) : null;
+
+  async function save(clear: boolean) {
+    setError(null);
+    setBusy(true);
+    try {
+      await visitService.setSplit(visit.id, {
+        sharedTherapistId: clear ? null : sharedTherapistId || null,
+        sharedPct: clear ? null : pctNum,
+      });
+      onClose();
+    } catch (e) {
+      setError(toFriendlyMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4">
+      <div className="w-full max-w-sm space-y-4 rounded-lg bg-white p-5 shadow-lg">
+        <h2 className="text-sm font-semibold text-slate-900">Share visit revenue</h2>
+        <p className="text-sm text-slate-600">
+          Credit part of this {formatINR(visit.actualBillPaise)} visit (billed under {primaryName}) to
+          an assisting therapist. This is internal only — the billed amount, date, and therapist the
+          hospital sees don’t change.
+        </p>
+        <Field label="Assisting therapist">
+          <select
+            className={inputCls}
+            value={sharedTherapistId}
+            onChange={(e) => setSharedTherapistId(e.target.value)}
+          >
+            <option value="">Select…</option>
+            {therapists.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Their share (%)">
+          <input
+            type="number"
+            min={1}
+            max={100}
+            className={inputCls}
+            value={pct}
+            onChange={(e) => setPct(e.target.value)}
+          />
+        </Field>
+        {preview != null && sharedTherapistId && (
+          <p className="text-xs text-slate-500">
+            {formatINR(preview)} moves to {therapists.find((t) => t.id === sharedTherapistId)?.name} in
+            the Shared column; {formatINR(visit.actualBillPaise - preview)} stays with {primaryName}.
+          </p>
+        )}
+        <ErrorNote message={error} />
+        <div className="flex justify-between gap-2">
+          <div>
+            {visit.sharedTherapistId && (
+              <button className={btnSecondary} disabled={busy} onClick={() => void save(true)}>
+                Remove split
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button className={btnSecondary} onClick={onClose}>
+              Cancel
+            </button>
+            <button
+              className={btnPrimary}
+              disabled={busy || !sharedTherapistId || !(pctNum > 0)}
+              onClick={() => void save(false)}
+            >
+              {busy ? 'Saving…' : 'Save split'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

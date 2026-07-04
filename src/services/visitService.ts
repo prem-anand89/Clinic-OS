@@ -145,5 +145,46 @@ export function createVisitService(repos: Repos) {
       await repos.visits.put(updated);
       return updated;
     },
+
+    /**
+     * Set (or clear) the internal therapist split on a visit. Unlike
+     * updateBilling this is allowed on invoiced visits: it never touches the
+     * billed amount or primary therapist, only the reporting-side attribution
+     * the hospital doesn't reconcile against. Pass sharedTherapistId: null to
+     * clear the split.
+     */
+    async setSplit(
+      visitId: UUID,
+      split: { sharedTherapistId: UUID | null; sharedPct?: number | null }
+    ): Promise<Visit> {
+      const visit = await repos.visits.get(visitId);
+      if (!visit) throw new Error('Visit not found');
+
+      let sharedTherapistId: UUID | null = null;
+      let sharedPct: number | null = null;
+      if (split.sharedTherapistId) {
+        if (visit.actualBillPaise <= 0) {
+          throw new Error('This visit has no billed amount to share.');
+        }
+        if (split.sharedTherapistId === visit.therapistId) {
+          throw new Error('Pick a different therapist to share with.');
+        }
+        const pct = split.sharedPct ?? 0;
+        if (!(pct > 0 && pct <= 100)) {
+          throw new Error('Share must be between 0 and 100 percent.');
+        }
+        sharedTherapistId = split.sharedTherapistId;
+        sharedPct = pct;
+      }
+
+      const updated: Visit = {
+        ...visit,
+        sharedTherapistId,
+        sharedPct,
+        updatedAt: new Date().toISOString(),
+      };
+      await repos.visits.put(updated);
+      return updated;
+    },
   };
 }

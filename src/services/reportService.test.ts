@@ -1,0 +1,104 @@
+import { describe, expect, it } from 'vitest';
+import { createReportService } from './reportService';
+import type { Repos, VisitFilter } from '@/repositories/types';
+import type { Therapist, Visit } from '@/domain/types';
+import { rupeesToPaise as rs } from '@/domain/money';
+
+const CLINIC = 'clinic-1';
+const PREM = 'th-prem';
+const AISH = 'th-aish';
+
+function makeFakeRepos(visitList: Visit[]) {
+  const therapists: Therapist[] = [
+    { id: PREM, clinicId: CLINIC, name: 'Prem', active: true, updatedAt: '' },
+    { id: AISH, clinicId: CLINIC, name: 'Aishwarya', active: true, updatedAt: '' },
+  ];
+  const repos = {
+    therapists: { list: async () => therapists },
+    visits: {
+      list: async (f: VisitFilter) =>
+        visitList.filter((v) => v.clinicId === f.clinicId && (!f.from || v.visitDate >= f.from) && (!f.to || v.visitDate <= f.to)),
+    },
+  } as unknown as Repos;
+  return repos;
+}
+
+function visit(over: Partial<Visit>): Visit {
+  const bill = over.actualBillPaise ?? rs(5400);
+  return {
+    id: crypto.randomUUID(),
+    clinicId: CLINIC,
+    patientId: 'pat-1',
+    therapistId: PREM,
+    visitDate: '2026-07-04',
+    condition: null,
+    treatmentNotes: null,
+    serviceCatalogId: 'svc-1',
+    catalogPricePaise: bill,
+    actualBillPaise: bill,
+    adjustmentPaise: 0,
+    adjustmentReason: null,
+    sessionIndex: null,
+    packageTotal: null,
+    packageGroupId: null,
+    bmSplitPct: 75,
+    taxPct: 10,
+    tdsBasis: 'gross_bill',
+    bmSharePaise: rs(4050),
+    postTaxPaise: rs(3645),
+    tdsPaise: rs(540),
+    hvPaise: rs(1350),
+    invoiceId: null,
+    deleted: false,
+    updatedAt: '',
+    ...over,
+  };
+}
+
+const JULY = { year: 2026, month: 7 };
+
+describe('reportService.monthly — therapist split', () => {
+  it('shifts sharedPaise from primary to assistant, netting to zero', async () => {
+    const repos = makeFakeRepos([
+      visit({ therapistId: PREM, actualBillPaise: rs(5400), sharedTherapistId: AISH, sharedPct: 33.33 }),
+    ]);
+    const report = await createReportService(repos).monthly(CLINIC, JULY);
+    const prem = report.rows.find((r) => r.therapistId === PREM)!;
+    const aish = report.rows.find((r) => r.therapistId === AISH)!;
+    const shared = Math.round((rs(5400) * 33.33) / 100);
+    expect(prem.sharedPaise).toBe(-shared);
+    expect(aish.sharedPaise).toBe(shared);
+    expect(report.total.sharedPaise).toBe(0);
+  });
+
+  it('leaves every billed column identical whether or not a split is set', async () => {
+    const withSplit = await createReportService(
+      makeFakeRepos([visit({ sharedTherapistId: AISH, sharedPct: 33.33 })])
+    ).monthly(CLINIC, JULY);
+    const without = await createReportService(makeFakeRepos([visit({})])).monthly(CLINIC, JULY);
+    // The primary therapist row and the total row must reconcile identically —
+    // splits never move the billed figures the hospital audits.
+    for (const key of ['billPaise', 'bmSharePaise', 'tdsPaise', 'postTaxPaise', 'hvPaise'] as const) {
+      expect(withSplit.total[key]).toBe(without.total[key]);
+    }
+  });
+
+  it('gives an assist-only therapist a row even with no visits of their own', async () => {
+    const repos = makeFakeRepos([
+      visit({ therapistId: PREM, sharedTherapistId: AISH, sharedPct: 50 }),
+    ]);
+    const report = await createReportService(repos).monthly(CLINIC, JULY);
+    const aish = report.rows.find((r) => r.therapistId === AISH)!;
+    expect(aish).toBeDefined();
+    expect(aish.visitCount).toBe(0);
+    expect(aish.billPaise).toBe(0);
+    expect(aish.sharedPaise).toBe(rs(2700));
+  });
+
+  it('reports zero shared for a month with no splits', async () => {
+    const repos = makeFakeRepos([visit({}), visit({ therapistId: AISH })]);
+    const report = await createReportService(repos).monthly(CLINIC, JULY);
+    expect(report.rows.every((r) => r.sharedPaise === 0)).toBe(true);
+    expect(report.total.sharedPaise).toBe(0);
+  });
+});

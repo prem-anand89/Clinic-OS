@@ -235,6 +235,78 @@ describe('reportService.monthly', () => {
   });
 });
 
+describe('visitService.setSplit', () => {
+  let fake: ReturnType<typeof makeFakeRepos>;
+  beforeEach(() => {
+    fake = makeFakeRepos();
+  });
+
+  const base = {
+    clinicId: 'clinic-1',
+    patientId: 'p1',
+    therapistId: 'th-prem',
+    visitDate: '2026-05-10',
+    serviceCatalogId: 'svc-physio3',
+  };
+
+  it('stores an assisting therapist and share', async () => {
+    const svc = createVisitService(fake.repos);
+    const v = await svc.create(base);
+    const updated = await svc.setSplit(v.id, { sharedTherapistId: 'th-aish', sharedPct: 33.33 });
+    expect(updated.sharedTherapistId).toBe('th-aish');
+    expect(updated.sharedPct).toBe(33.33);
+  });
+
+  it('rejects splitting with the same (primary) therapist', async () => {
+    const svc = createVisitService(fake.repos);
+    const v = await svc.create(base);
+    await expect(svc.setSplit(v.id, { sharedTherapistId: 'th-prem', sharedPct: 50 })).rejects.toThrow(
+      /different therapist/
+    );
+  });
+
+  it('rejects an out-of-range percentage', async () => {
+    const svc = createVisitService(fake.repos);
+    const v = await svc.create(base);
+    await expect(svc.setSplit(v.id, { sharedTherapistId: 'th-aish', sharedPct: 150 })).rejects.toThrow(
+      /between 0 and 100/
+    );
+  });
+
+  it('refuses to split a ₹0 continuation session', async () => {
+    const svc = createVisitService(fake.repos);
+    const first = await svc.create(base);
+    const zero = await svc.create({
+      ...base,
+      visitDate: '2026-05-12',
+      isContinuation: true,
+      sessionIndex: 2,
+      packageTotal: 3,
+      packageGroupId: first.packageGroupId,
+    });
+    await expect(svc.setSplit(zero.id, { sharedTherapistId: 'th-aish', sharedPct: 50 })).rejects.toThrow(
+      /no billed amount/
+    );
+  });
+
+  it('clears both fields when the assistant is null', async () => {
+    const svc = createVisitService(fake.repos);
+    const v = await svc.create(base);
+    await svc.setSplit(v.id, { sharedTherapistId: 'th-aish', sharedPct: 40 });
+    const cleared = await svc.setSplit(v.id, { sharedTherapistId: null });
+    expect(cleared.sharedTherapistId).toBeNull();
+    expect(cleared.sharedPct).toBeNull();
+  });
+
+  it('allows setting a split on an already-invoiced visit', async () => {
+    const svc = createVisitService(fake.repos);
+    const v = await svc.create(base);
+    fake.visits.set(v.id, { ...v, invoiceId: 'inv-1' });
+    const updated = await svc.setSplit(v.id, { sharedTherapistId: 'th-aish', sharedPct: 25 });
+    expect(updated.sharedTherapistId).toBe('th-aish');
+  });
+});
+
 describe('patientService MRNO fallback', () => {
   it('uses the typed hospital MRNO when given, generates W- prefixed otherwise', async () => {
     const fake = makeFakeRepos();

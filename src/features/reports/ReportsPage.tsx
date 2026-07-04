@@ -80,7 +80,7 @@ export function ReportsPage() {
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-        <MonthlyReportTable report={report} />
+        <MonthlyReportTable report={report} showShared />
       </div>
 
       <p className="text-xs text-slate-500">
