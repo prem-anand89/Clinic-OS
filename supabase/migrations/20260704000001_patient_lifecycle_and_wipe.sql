@@ -56,8 +56,8 @@ begin
   alter table visits disable trigger visits_protect_invoiced;
 
   delete from invoice_payments where clinic_id = p_clinic_id;
-  delete from invoices where clinic_id = p_clinic_id;
   delete from visits where clinic_id = p_clinic_id;
+  delete from invoices where clinic_id = p_clinic_id;
   delete from patients where clinic_id = p_clinic_id;
   delete from settlements where clinic_id = p_clinic_id;
   delete from invoice_counters where clinic_id = p_clinic_id;
