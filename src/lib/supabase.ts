@@ -17,3 +17,11 @@ export function getSupabase(): SupabaseClient | null {
   }
   return client;
 }
+
+/** Public URL for a file in the clinic-assets bucket, or null if unset/unconfigured. */
+export function publicLogoUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  return supabase.storage.from('clinic-assets').getPublicUrl(path).data.publicUrl;
+}

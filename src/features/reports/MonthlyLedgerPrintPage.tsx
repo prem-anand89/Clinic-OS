@@ -3,19 +3,12 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, reportService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
-import { getSupabase } from '@/lib/supabase';
+import { publicLogoUrl } from '@/lib/supabase';
 import { formatINR } from '@/domain/money';
 import { fiscalYearOf, monthDateRange, monthName } from '@/domain/fiscalYear';
 import { clinicShareLabels } from '@/domain/types';
 import { btnPrimary, btnSecondary } from '@/components/ui';
 import { MonthlyReportTable } from '@/components/MonthlyReportTable';
-
-function publicLogoUrl(path: string | null): string | null {
-  if (!path) return null;
-  const supabase = getSupabase();
-  if (!supabase) return null;
-  return supabase.storage.from('clinic-assets').getPublicUrl(path).data.publicUrl;
-}
 
 function dayOfWeek(visitDate: string): string {
   return new Date(`${visitDate}T00:00:00`).toLocaleDateString('en-US', { weekday: 'long' });

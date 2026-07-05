@@ -1,8 +1,8 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-import { getSupabase } from '@/lib/supabase';
+import { getSupabase, publicLogoUrl } from '@/lib/supabase';
 import { syncEngine } from '@/sync/engine';
 import { useSession } from './useSession';
 import { ClinicContext } from './clinicContext';
@@ -30,6 +30,9 @@ export function Shell() {
     async () => (await db.meta.get('activeClinicId'))?.value ?? null,
     []
   );
+  const clinic =
+    clinics?.find((c) => c.id === activeClinicId) ?? (clinics?.length === 1 ? clinics[0] : null);
+  const logoUrl = useMemo(() => publicLogoUrl(clinic?.logoPath), [clinic?.logoPath]);
 
   useEffect(() => {
     if (session) {
@@ -59,9 +62,6 @@ export function Shell() {
 
   if (loading) return <Centered>Loading…</Centered>;
   if (!session) return <LoginPage />;
-
-  const clinic =
-    clinics?.find((c) => c.id === activeClinicId) ?? (clinics?.length === 1 ? clinics[0] : null);
 
   if (!clinic) {
     return (
@@ -110,7 +110,10 @@ export function Shell() {
       <div className="min-h-screen bg-[var(--paper)]">
         <header className="no-print sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface)]">
           <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
-            <div className="font-display truncate text-lg font-semibold text-[var(--ink)]">{clinic.name}</div>
+            <div className="flex min-w-0 items-center gap-2">
+              {logoUrl && <img src={logoUrl} alt="" className="h-8 w-auto shrink-0 object-contain" />}
+              <div className="font-display truncate text-lg font-semibold text-[var(--ink)]">{clinic.name}</div>
+            </div>
             {/* Desktop nav */}
             <nav className="hidden gap-1 sm:flex">
               {NAV.map((item) => (

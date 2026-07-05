@@ -4,15 +4,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { repos } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
-import { getSupabase } from '@/lib/supabase';
+import { publicLogoUrl } from '@/lib/supabase';
 import { btnPrimary, btnSecondary, inputCls } from '@/components/ui';
-
-function publicLogoUrl(path: string | null): string | null {
-  if (!path) return null;
-  const supabase = getSupabase();
-  if (!supabase) return null;
-  return supabase.storage.from('clinic-assets').getPublicUrl(path).data.publicUrl;
-}
 
 export function InvoicePrintPage() {
   const clinic = useClinic();
