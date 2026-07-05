@@ -1,0 +1,110 @@
+import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { getSupabase } from '@/lib/supabase';
+import { hasSupabaseConfig } from '@/lib/env';
+import { toFriendlyMessage } from '@/lib/errors';
+import { Field, inputCls, btnPrimary, ErrorNote } from '@/components/ui';
+
+/**
+ * Landing page for a Supabase password-recovery email link. The recovery
+ * token lives in the URL fragment; the Supabase client's default
+ * detectSessionInUrl picks it up and establishes a session before this
+ * component's checks run, without any code here needing to parse it.
+ */
+export function ResetPasswordPage() {
+  const navigate = useNavigate();
+  const [ready, setReady] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!hasSupabaseConfig) return;
+    void getSupabase()!
+      .auth.getSession()
+      .then(({ data }) => setReady(Boolean(data.session)));
+  }, []);
+
+  if (!hasSupabaseConfig) {
+    return (
+      <div className="mx-auto mt-24 max-w-md rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
+        <h1 className="mb-2 text-base font-semibold">Supabase not configured</h1>
+        <p>Copy <code>.env.example</code> to <code>.env</code> and restart the dev server.</p>
+      </div>
+    );
+  }
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords don't match.");
+      return;
+    }
+    setBusy(true);
+    const { error } = await getSupabase()!.auth.updateUser({ password });
+    if (error) {
+      setError(toFriendlyMessage(error));
+      setBusy(false);
+      return;
+    }
+    setDone(true);
+    setBusy(false);
+  }
+
+  return (
+    <div className="mx-auto mt-24 max-w-sm">
+      <h1 className="mb-1 text-center text-xl font-semibold text-slate-900">Clinic OS</h1>
+      <p className="mb-6 text-center text-sm text-slate-500">Choose a new password</p>
+      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        {done ? (
+          <>
+            <p className="text-sm text-slate-700">
+              Password updated. You're signed in — continue to the app.
+            </p>
+            <button className={`${btnPrimary} w-full`} onClick={() => void navigate({ to: '/visits' })}>
+              Continue
+            </button>
+          </>
+        ) : !ready ? (
+          <p className="text-sm text-slate-600">
+            This link is invalid or has expired. Go back to the login page and request a new one.
+          </p>
+        ) : (
+          <form onSubmit={onSubmit} className="space-y-4">
+            <Field label="New password">
+              <input
+                type="password"
+                required
+                minLength={8}
+                className={inputCls}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </Field>
+            <Field label="Confirm new password">
+              <input
+                type="password"
+                required
+                minLength={8}
+                className={inputCls}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+              />
+            </Field>
+            <ErrorNote message={error} />
+            <button type="submit" disabled={busy} className={`${btnPrimary} w-full`}>
+              {busy ? 'Saving…' : 'Set new password'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}

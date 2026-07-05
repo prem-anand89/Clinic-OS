@@ -46,6 +46,11 @@ export function Shell() {
     }
   }, [clinics, activeClinicId]);
 
+  // The recovery link's own auth flow doesn't need session/clinic gating —
+  // it may be opened by someone whose local session has expired, and it
+  // must render before those checks would otherwise redirect to login.
+  if (pathname === '/reset-password') return <Outlet />;
+
   if (loading) return <Centered>Loading…</Centered>;
   if (!session) return <LoginPage />;
 

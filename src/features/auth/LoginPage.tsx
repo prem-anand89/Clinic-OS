@@ -5,10 +5,12 @@ import { toFriendlyMessage } from '@/lib/errors';
 import { Field, inputCls, btnPrimary, ErrorNote } from '@/components/ui';
 
 export function LoginPage() {
+  const [mode, setMode] = useState<'signin' | 'reset'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   if (!hasSupabaseConfig) {
     return (
@@ -30,6 +32,62 @@ export function LoginPage() {
     const { error } = await getSupabase()!.auth.signInWithPassword({ email, password });
     if (error) setError(toFriendlyMessage(error));
     setBusy(false);
+  }
+
+  async function onRequestReset(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    const { error } = await getSupabase()!.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) setError(toFriendlyMessage(error));
+    else setResetSent(true);
+    setBusy(false);
+  }
+
+  if (mode === 'reset') {
+    return (
+      <div className="mx-auto mt-24 max-w-sm">
+        <h1 className="mb-1 text-center text-xl font-semibold text-slate-900">Clinic OS</h1>
+        <p className="mb-6 text-center text-sm text-slate-500">Reset your password</p>
+        <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          {resetSent ? (
+            <p className="text-sm text-slate-700">
+              If an account exists for <span className="font-medium">{email}</span>, a reset link
+              has been sent — check your email and follow the link to choose a new password.
+            </p>
+          ) : (
+            <form onSubmit={onRequestReset} className="space-y-4">
+              <Field label="Email">
+                <input
+                  type="email"
+                  required
+                  className={inputCls}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </Field>
+              <ErrorNote message={error} />
+              <button type="submit" disabled={busy} className={`${btnPrimary} w-full`}>
+                {busy ? 'Sending…' : 'Send reset link'}
+              </button>
+            </form>
+          )}
+          <button
+            type="button"
+            className="w-full text-center text-xs text-slate-500 hover:text-slate-800"
+            onClick={() => {
+              setMode('signin');
+              setError(null);
+              setResetSent(false);
+            }}
+          >
+            ← Back to sign in
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -58,6 +116,16 @@ export function LoginPage() {
         <ErrorNote message={error} />
         <button type="submit" disabled={busy} className={`${btnPrimary} w-full`}>
           {busy ? 'Signing in…' : 'Sign in'}
+        </button>
+        <button
+          type="button"
+          className="w-full text-center text-xs text-slate-500 hover:text-slate-800"
+          onClick={() => {
+            setMode('reset');
+            setError(null);
+          }}
+        >
+          Forgot password?
         </button>
         <p className="text-xs text-slate-500">
           First sign-in needs a connection; after that the app works offline and syncs when back

@@ -15,6 +15,7 @@ import { InvoicePrintPage } from '@/features/invoices/InvoicePrintPage';
 import { SetupPage } from '@/features/setup/SetupPage';
 import { ImportVisitsPage } from '@/features/import/ImportVisitsPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
 
 const rootRoute = createRootRoute({ component: Shell });
 
@@ -92,6 +93,12 @@ const dashboardRoute = createRoute({
   component: DashboardPage,
 });
 
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reset-password',
+  component: ResetPasswordPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   visitsRoute,
@@ -104,6 +111,7 @@ const routeTree = rootRoute.addChildren([
   setupRoute,
   importVisitsRoute,
   dashboardRoute,
+  resetPasswordRoute,
 ]);
 
 export const router = createRouter({ routeTree });
