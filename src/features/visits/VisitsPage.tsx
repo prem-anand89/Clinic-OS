@@ -24,7 +24,7 @@ import { toFriendlyMessage } from '@/lib/errors';
 const PAYMENT_MODES: PaymentMode[] = ['Cash', 'Card', 'UPI', 'Insurance'];
 const PATIENT_SEARCH_LIMIT = 6;
 
-type DatePreset = 'week' | 'month' | 'lastMonth' | 'all' | 'custom';
+type DatePreset = 'week' | 'month' | 'lastMonth' | 'all';
 const DATE_PRESETS: { key: DatePreset; label: string }[] = [
   { key: 'week', label: 'This week' },
   { key: 'month', label: 'This month' },
@@ -189,28 +189,6 @@ export function VisitsPage() {
               </div>
             )}
           </div>
-          <Field label="From">
-            <input
-              type="date"
-              className={inputCls}
-              value={from}
-              onChange={(e) => {
-                setFrom(e.target.value);
-                setDatePreset('custom');
-              }}
-            />
-          </Field>
-          <Field label="To">
-            <input
-              type="date"
-              className={inputCls}
-              value={to}
-              onChange={(e) => {
-                setTo(e.target.value);
-                setDatePreset('custom');
-              }}
-            />
-          </Field>
           <Field label="Therapist">
             <select className={inputCls} value={therapistId} onChange={(e) => setTherapistId(e.target.value)}>
               <option value="">All</option>
@@ -282,7 +260,7 @@ export function VisitsPage() {
       )}
 
       <div className="flex justify-end">
-        <div className="flex gap-1 rounded-md border border-[var(--border)] p-1">
+        <div className="flex flex-wrap gap-1 rounded-md border border-[var(--border)] p-1">
           {DATE_PRESETS.map((p) => (
             <button
               key={p.key}

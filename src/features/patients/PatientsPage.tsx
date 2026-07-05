@@ -119,26 +119,28 @@ export function PatientsPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
         <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Patients</h1>
-        <div className="ml-auto flex items-end gap-2">
-          <select
-            className={inputCls}
-            value={fyStartYear}
-            onChange={(e) => setFyStartYear(Number(e.target.value))}
-          >
-            {[currentFy.startYear - 2, currentFy.startYear - 1, currentFy.startYear].map((y) => (
-              <option key={y} value={y}>
-                FY {fiscalYearOf(new Date(y, clinic.fyStartMonth - 1, 1), clinic.fyStartMonth).label}
-              </option>
-            ))}
-          </select>
-          <select className={inputCls} value={month} onChange={(e) => setMonth(e.target.value)}>
-            <option value="">All time</option>
-            {months.map((m) => (
-              <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`}>
-                {monthName(m.month)} {m.year}
-              </option>
-            ))}
-          </select>
+        <div className="ml-auto flex flex-wrap items-end gap-2">
+          <div className="flex gap-2">
+            <select
+              className={inputCls}
+              value={fyStartYear}
+              onChange={(e) => setFyStartYear(Number(e.target.value))}
+            >
+              {[currentFy.startYear - 2, currentFy.startYear - 1, currentFy.startYear].map((y) => (
+                <option key={y} value={y}>
+                  FY {fiscalYearOf(new Date(y, clinic.fyStartMonth - 1, 1), clinic.fyStartMonth).label}
+                </option>
+              ))}
+            </select>
+            <select className={inputCls} value={month} onChange={(e) => setMonth(e.target.value)}>
+              <option value="">All time</option>
+              {months.map((m) => (
+                <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`}>
+                  {monthName(m.month)} {m.year}
+                </option>
+              ))}
+            </select>
+          </div>
           <input
             className={`${inputCls} max-w-xs`}
             placeholder="Search by MRNO or name…"
