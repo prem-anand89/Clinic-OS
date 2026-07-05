@@ -37,8 +37,8 @@ export function ResetPasswordPage() {
 
   if (!hasSupabaseConfig) {
     return (
-      <div className="mx-auto mt-24 max-w-md rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-        <h1 className="mb-2 text-base font-semibold">Supabase not configured</h1>
+      <div className="mx-auto mt-24 max-w-md rounded-[10px] border border-[var(--rust)] bg-[var(--rust-light)] p-6 text-sm text-[var(--rust)]">
+        <h1 className="font-display mb-2 text-base font-semibold">Supabase not configured</h1>
         <p>Copy <code>.env.example</code> to <code>.env</code> and restart the dev server.</p>
       </div>
     );
@@ -68,14 +68,14 @@ export function ResetPasswordPage() {
 
   return (
     <div className="mx-auto mt-24 max-w-sm">
-      <h1 className="mb-1 text-center text-xl font-semibold text-slate-900">Clinic OS</h1>
-      <p className="mb-6 text-center text-sm text-slate-500">Choose a new password</p>
-      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <h1 className="font-display mb-1 text-center text-xl font-semibold text-[var(--ink)]">Clinic OS</h1>
+      <p className="mb-6 text-center text-sm text-[var(--muted)]">Choose a new password</p>
+      <div className="space-y-4 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-6">
         {checking ? (
-          <p className="text-sm text-slate-500">Checking your link…</p>
+          <p className="text-sm text-[var(--muted)]">Checking your link…</p>
         ) : done ? (
           <>
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-[var(--ink)]">
               Password updated. You're signed in — continue to the app.
             </p>
             <button className={`${btnPrimary} w-full`} onClick={() => void navigate({ to: '/visits' })}>
@@ -83,7 +83,7 @@ export function ResetPasswordPage() {
             </button>
           </>
         ) : !ready ? (
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[var(--muted)]">
             This link is invalid or has expired. Go back to the login page and request a new one.
           </p>
         ) : (

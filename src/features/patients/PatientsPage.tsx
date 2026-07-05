@@ -87,7 +87,7 @@ export function PatientsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-end gap-3">
-        <h1 className="text-lg font-semibold text-slate-900">Patients</h1>
+        <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Patients</h1>
         <input
           className={`${inputCls} ml-auto max-w-xs`}
           placeholder="Search by MRNO or name…"
@@ -97,14 +97,14 @@ export function PatientsPage() {
       </div>
 
       {error && (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-md border border-[var(--rust)] bg-[var(--rust-light)] px-3 py-2 text-sm text-[var(--rust)]">
           {error}
         </p>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+      <div className="overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
+        <table className="min-w-full divide-y divide-[var(--border)]">
+          <thead className="bg-[var(--paper)]">
             <tr>
               <SortHeader label="MRNO" k="mrno" sort={sort} />
               <SortHeader label="Name" k="name" sort={sort} />
@@ -114,9 +114,9 @@ export function PatientsPage() {
               <th className={th}></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[var(--border)]">
             {rows.map((p) => (
-              <tr key={p.id} className="hover:bg-slate-50">
+              <tr key={p.id} className="hover:bg-[var(--paper)]">
                 <td className={td}>
                   {p.mrno}
                   {p.mrnoSource === 'auto' && (
@@ -125,7 +125,7 @@ export function PatientsPage() {
                     </span>
                   )}
                 </td>
-                <td className={td}>{p.name}</td>
+                <td className={`${td} font-display`}>{p.name}</td>
                 <td className={td}>
                   {p.age ?? '—'} / {p.sex ?? '—'}
                 </td>
@@ -135,18 +135,18 @@ export function PatientsPage() {
                   <Link
                     to="/visits"
                     search={{ patientId: p.id }}
-                    className="text-blue-600 hover:underline"
+                    className="text-[var(--teal)] hover:underline"
                   >
                     Visit history
                   </Link>
                   <button
-                    className="ml-3 text-xs text-slate-400 hover:text-blue-600"
+                    className="ml-3 text-xs text-[var(--muted)] hover:text-[var(--teal)]"
                     onClick={() => setEditing(p)}
                   >
                     Edit
                   </button>
                   <button
-                    className="ml-3 text-xs text-slate-400 hover:text-amber-600"
+                    className="ml-3 text-xs text-[var(--muted)] hover:text-[var(--rust)]"
                     onClick={() => void hide(p)}
                   >
                     Hide
@@ -156,7 +156,7 @@ export function PatientsPage() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-sm text-slate-400">
+                <td colSpan={6} className="px-3 py-8 text-center text-sm text-[var(--muted)]">
                   {q ? 'No patients match your search.' : 'No patients yet — they’re created from the “New visit” flow.'}
                 </td>
               </tr>
@@ -166,34 +166,34 @@ export function PatientsPage() {
       </div>
 
       {hidden.length > 0 && (
-        <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
           <button
-            className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-[var(--ink)] hover:bg-[var(--paper)]"
             onClick={() => setShowHidden((s) => !s)}
           >
             <span>Hidden patients ({hidden.length})</span>
-            <span className="text-xs text-slate-400">{showHidden ? 'Collapse' : 'Show'}</span>
+            <span className="text-xs text-[var(--muted)]">{showHidden ? 'Collapse' : 'Show'}</span>
           </button>
           {showHidden && (
-            <table className="min-w-full divide-y divide-slate-200 border-t border-slate-200">
-              <tbody className="divide-y divide-slate-100">
+            <table className="min-w-full divide-y divide-[var(--border)] border-t border-[var(--border)]">
+              <tbody className="divide-y divide-[var(--border)]">
                 {hidden.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
+                  <tr key={p.id} className="hover:bg-[var(--paper)]">
                     <td className={td}>
-                      {p.name} <span className="text-xs text-slate-400">{p.mrno}</span>
+                      <span className="font-display">{p.name}</span> <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
                     </td>
                     <td className={td}>
                       <Pill tone="slate">Hidden {p.deletedAt?.slice(0, 10)}</Pill>
                     </td>
                     <td className={`${td} whitespace-nowrap text-right`}>
                       <button
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs text-[var(--teal)] hover:underline"
                         onClick={() => void restore(p)}
                       >
                         Restore
                       </button>
                       <button
-                        className="ml-3 text-xs text-slate-400 hover:text-red-600"
+                        className="ml-3 text-xs text-[var(--muted)] hover:text-[var(--rust)]"
                         onClick={() => void hardDelete(p)}
                       >
                         Delete permanently
@@ -245,9 +245,9 @@ function EditPatientModal({ patient, onClose }: { patient: Patient; onClose: () 
   }
 
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4">
-      <div className="w-full max-w-md space-y-4 rounded-lg bg-white p-5 shadow-lg">
-        <h2 className="text-sm font-semibold text-slate-900">Edit patient</h2>
+    <div className="fixed inset-0 z-20 flex items-center justify-center bg-[var(--ink)]/40 p-4">
+      <div className="w-full max-w-md space-y-4 rounded-[10px] bg-[var(--surface)] p-5">
+        <h2 className="text-sm font-semibold text-[var(--ink)]">Edit patient</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Name">
             <input className={inputCls} value={form.name} onChange={(e) => set({ name: e.target.value })} />

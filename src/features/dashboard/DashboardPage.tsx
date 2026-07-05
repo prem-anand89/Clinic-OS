@@ -57,7 +57,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-slate-900">Dashboard</h1>
+      <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Dashboard</h1>
 
       <SectionCard title={`Revenue trend — last 6 months (Post-Tax ${labels.own})`}>
         {trend && (
@@ -74,7 +74,7 @@ export function DashboardPage() {
           />
         )}
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
             <thead>
               <tr>
                 <th className={th}>Month</th>
@@ -87,9 +87,9 @@ export function DashboardPage() {
                 <th className={thNum}>Patients</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--border)]">
               {(trend ?? []).map((r, i) => (
-                <tr key={i} className="hover:bg-slate-50">
+                <tr key={i} className="hover:bg-[var(--paper)]">
                   <td className={td}>{categories[i]}</td>
                   <td className={tdNum}>{formatINR(r.total.billPaise)}</td>
                   <td className={tdNum}>{formatINR(r.total.bmSharePaise)}</td>
@@ -118,17 +118,17 @@ export function DashboardPage() {
           />
         )}
         {trend && therapistNames.length === 0 && (
-          <p className="text-sm text-slate-400">No visits in the last 6 months.</p>
+          <p className="text-sm text-[var(--muted)]">No visits in the last 6 months.</p>
         )}
       </SectionCard>
 
       <SectionCard title="Open packages">
-        <p className="mb-3 text-xs text-slate-500">
+        <p className="mb-3 text-xs text-[var(--muted)]">
           Packages still short of their session count, most-quiet first. A patient not seen in over
           14 days is flagged stale.
         </p>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
             <thead>
               <tr>
                 <SortHeader label="Patient" k="patient" sort={packageSort} />
@@ -140,11 +140,11 @@ export function DashboardPage() {
                 <th className={th}></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--border)]">
               {sortedPackages.map((p) => (
-                <tr key={p.packageGroupId} className="hover:bg-slate-50">
+                <tr key={p.packageGroupId} className="hover:bg-[var(--paper)]">
                   <td className={td}>
-                    {p.patientName} <span className="text-xs text-slate-400">{p.mrno}</span>
+                    <span className="font-display">{p.patientName}</span> <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
                   </td>
                   <td className={td}>{p.serviceName}</td>
                   <td className={tdNum}>
@@ -158,7 +158,7 @@ export function DashboardPage() {
               ))}
               {openPackages?.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center text-sm text-slate-400">
+                  <td colSpan={7} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
                     No open packages in the last 6 months.
                   </td>
                 </tr>
@@ -174,7 +174,7 @@ export function DashboardPage() {
           <StatTile label="Invoices" value={outstanding?.count ?? 0} />
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
             <thead>
               <tr>
                 <th className={th}>Invoice №</th>
@@ -184,20 +184,20 @@ export function DashboardPage() {
                 <th className={thNum}>Days outstanding</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--border)]">
               {(outstanding?.rows ?? []).map((r) => (
-                <tr key={r.invoiceId} className="hover:bg-slate-50">
+                <tr key={r.invoiceId} className="hover:bg-[var(--paper)]">
                   <td className={td}>
                     <Link
                       to="/invoices/$invoiceId/print"
                       params={{ invoiceId: r.invoiceId }}
-                      className="text-blue-600 hover:underline"
+                      className="text-[var(--teal)] hover:underline"
                     >
                       {r.invoiceNo}
                     </Link>
                   </td>
                   <td className={td}>
-                    {r.patientName} <span className="text-xs text-slate-400">{r.mrno}</span>
+                    <span className="font-display">{r.patientName}</span> <span className="text-xs text-[var(--muted)]">{r.mrno}</span>
                   </td>
                   <td className={tdNum}>{formatINR(r.totalPaise)}</td>
                   <td className={td}>{r.issuedAt.slice(0, 10)}</td>
@@ -206,7 +206,7 @@ export function DashboardPage() {
               ))}
               {outstanding?.rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-sm text-slate-400">
+                  <td colSpan={5} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
                     Nothing outstanding.
                   </td>
                 </tr>

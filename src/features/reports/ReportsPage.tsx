@@ -48,7 +48,7 @@ export function ReportsPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <h1 className="text-lg font-semibold text-slate-900">Monthly report</h1>
+        <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Monthly report</h1>
         <div className="ml-auto flex items-end gap-2">
           <select
             className={inputCls}
@@ -81,11 +81,11 @@ export function ReportsPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
         <MonthlyReportTable report={report} showShared own={labels.own} partner={labels.partner} />
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-[var(--muted)]">
         Patients = unique patients in the month, not visit count. TDS basis for new visits:{' '}
         {clinic.tdsBasis === 'gross_bill'
           ? `10%-of-gross-bill (matches the ${labels.partner} sheet)`
@@ -152,7 +152,7 @@ function SettlementCard({
     <SectionCard title={`${labels.partner} settlement — ${monthName(month.month)} ${month.year}`}>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Field label={`Expected (computed Post Tax ${labels.own})${expectedPaise == null ? '' : `: ${formatINR(expectedPaise)}`}`}>
-          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+          <div className="rounded-md border border-[var(--border)] bg-[var(--paper)] px-3 py-2 text-sm text-[var(--ink)]">
             {expectedPaise != null ? formatINR(expectedPaise) : '—'}
           </div>
         </Field>
@@ -175,10 +175,10 @@ function SettlementCard({
         <p
           className={`mt-3 text-sm font-medium ${
             variancePaise === 0
-              ? 'text-emerald-600'
+              ? 'text-[var(--moss)]'
               : Math.abs(variancePaise) < 100
-                ? 'text-amber-600'
-                : 'text-red-600'
+                ? 'text-[var(--rust)]'
+                : 'text-[var(--rust)]'
           }`}
         >
           Variance: {variancePaise >= 0 ? '+' : ''}
@@ -189,7 +189,7 @@ function SettlementCard({
         <button className={btnPrimary} onClick={() => void save()}>
           Save settlement
         </button>
-        {saved && <span className="text-sm text-emerald-600">Saved ✓</span>}
+        {saved && <span className="text-sm text-[var(--moss)]">Saved ✓</span>}
       </div>
       <ErrorNote message={error} />
     </SectionCard>

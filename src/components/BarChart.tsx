@@ -60,7 +60,7 @@ export function BarChart({
   const [hovered, setHovered] = useState<HoveredBar | null>(null);
 
   if (categories.length === 0) {
-    return <p className="py-6 text-center text-sm text-slate-400">No data to chart.</p>;
+    return <p className="py-6 text-center text-sm text-[var(--muted)]">No data to chart.</p>;
   }
 
   const width = 640;
@@ -84,7 +84,7 @@ export function BarChart({
   return (
     <div className="w-full">
       {series.length > 1 && (
-        <div className="mb-2 flex gap-4 text-xs font-medium text-slate-600">
+        <div className="mb-2 flex gap-4 text-xs font-medium text-[var(--muted)]">
           {series.map((s) => (
             <span key={s.label} className="flex items-center gap-1.5">
               <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: s.color }} />
@@ -170,21 +170,21 @@ export function BarChart({
 
         {hovered && (
           <div
-            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs shadow-md"
+            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-xs shadow-md"
             style={{
               left: `${(hovered.cx / width) * 100}%`,
               top: `${(hovered.cy / height) * 100}%`,
               marginTop: -6,
             }}
           >
-            <div className="font-medium text-slate-900">{categories[hovered.categoryIndex]}</div>
-            <div className="mt-0.5 flex items-center gap-1.5 text-slate-600">
+            <div className="font-medium text-[var(--ink)]">{categories[hovered.categoryIndex]}</div>
+            <div className="mt-0.5 flex items-center gap-1.5 text-[var(--muted)]">
               <span
                 className="inline-block h-2.5 w-2.5 rounded-sm"
                 style={{ backgroundColor: series[hovered.seriesIndex].color }}
               />
               {series.length > 1 && <span>{series[hovered.seriesIndex].label}:</span>}
-              <span className="font-semibold tabular-nums text-slate-900">{formatValue(hoveredValue)}</span>
+              <span className="font-semibold tabular-nums text-[var(--ink)]">{formatValue(hoveredValue)}</span>
             </div>
           </div>
         )}

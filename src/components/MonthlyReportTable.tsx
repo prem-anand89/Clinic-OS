@@ -34,8 +34,8 @@ export function MonthlyReportTable({
   );
 
   return (
-    <table className="min-w-full divide-y divide-slate-200">
-      <thead className="bg-slate-50">
+    <table className="min-w-full divide-y divide-[var(--border)]">
+      <thead className="bg-[var(--paper)]">
         <tr>
           <th className={th}>Therapist</th>
           <th className={thNum}>Bill Amount</th>
@@ -71,7 +71,7 @@ export function MonthlyReportTable({
           <th className={thNum}>Patients</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-slate-100">
+      <tbody className="divide-y divide-[var(--border)]">
         {(report?.rows ?? []).map((r) => (
           <tr key={r.therapistId}>
             <td className={td}>{r.therapistName}</td>
@@ -79,7 +79,7 @@ export function MonthlyReportTable({
           </tr>
         ))}
         {report && (
-          <tr className="bg-slate-50 font-semibold">
+          <tr className="bg-[var(--paper)] font-semibold">
             <td className={td}>Total</td>
             {cells(report.total)}
           </tr>

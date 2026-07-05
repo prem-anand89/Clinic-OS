@@ -41,10 +41,10 @@ export function InvoicesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-slate-900">Invoices</h1>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+      <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Invoices</h1>
+      <div className="overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
+        <table className="min-w-full divide-y divide-[var(--border)]">
+          <thead className="bg-[var(--paper)]">
             <tr>
               <SortHeader label="Invoice №" k="no" sort={sort} firstDir="desc" />
               <SortHeader label="Date" k="date" sort={sort} firstDir="desc" />
@@ -56,14 +56,14 @@ export function InvoicesPage() {
               <th className={th}></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[var(--border)]">
             {sortedInvoices.map((inv) => {
               const status = statusByInvoiceId.get(inv.id) ?? 'paid';
               return (
-                <tr key={inv.id} className="hover:bg-slate-50">
+                <tr key={inv.id} className="hover:bg-[var(--paper)]">
                   <td className={`${td} font-medium`}>{inv.invoiceNo}</td>
                   <td className={td}>{inv.issuedAt.slice(0, 10)}</td>
-                  <td className={td}>{inv.patientSnapshot.name}</td>
+                  <td className={`${td} font-display`}>{inv.patientSnapshot.name}</td>
                   <td className={td}>{inv.patientSnapshot.mrno}</td>
                   <td className={tdNum}>{formatINR(inv.totalPaise)}</td>
                   <td className={td}>{inv.paymentMode}</td>
@@ -72,7 +72,7 @@ export function InvoicesPage() {
                       {status === 'paid' ? 'Paid' : 'Outstanding'}
                     </Pill>
                     <button
-                      className="ml-2 text-xs text-blue-600 hover:underline"
+                      className="ml-2 text-xs text-[var(--teal)] hover:underline"
                       onClick={() => void toggle(inv.id, status)}
                     >
                       Mark {status === 'paid' ? 'outstanding' : 'paid'}
@@ -82,7 +82,7 @@ export function InvoicesPage() {
                     <Link
                       to="/invoices/$invoiceId/print"
                       params={{ invoiceId: inv.id }}
-                      className="text-blue-600 hover:underline"
+                      className="text-[var(--teal)] hover:underline"
                     >
                       Print
                     </Link>
@@ -92,7 +92,7 @@ export function InvoicesPage() {
             })}
             {invoices?.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-sm text-slate-400">
+                <td colSpan={8} className="px-3 py-8 text-center text-sm text-[var(--muted)]">
                   No invoices issued yet — issue one from the Visits table.
                 </td>
               </tr>
@@ -100,7 +100,7 @@ export function InvoicesPage() {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-[var(--muted)]">
         Issued invoices are immutable; numbering is sequential per fiscal year and gap-free.
         Payment status is tracked separately and doesn't affect the invoice itself.
       </p>

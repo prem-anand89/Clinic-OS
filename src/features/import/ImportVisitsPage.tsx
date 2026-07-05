@@ -76,15 +76,15 @@ export function ImportVisitsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
-      <h1 className="text-lg font-semibold text-slate-900">Import historical visits</h1>
-      <p className="text-sm text-slate-500">
+      <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Import historical visits</h1>
+      <p className="text-sm text-[var(--muted)]">
         One-time import of visits logged before go-live in the Excel ledger. Patients are matched
         or created by MRNO; no invoices are generated for imported visits.
       </p>
 
       {stage.kind === 'upload' && (
         <SectionCard title="Upload the workbook">
-          <p className="mb-3 text-xs text-slate-500">
+          <p className="mb-3 text-xs text-[var(--muted)]">
             Expects the same layout as the Beyond Mechanics / Health Valley sheet: month tabs
             (April, May, June…) with columns Date, Patients, MRNO, A/S, Condition, Therapist,
             Treatment, Service Name, Bill Amount.
@@ -95,7 +95,7 @@ export function ImportVisitsPage() {
             disabled={busy}
             onChange={(e) => e.target.files?.[0] && void handleFile(e.target.files[0])}
           />
-          {busy && <p className="mt-2 text-sm text-slate-500">Reading workbook…</p>}
+          {busy && <p className="mt-2 text-sm text-[var(--muted)]">Reading workbook…</p>}
           <div className="mt-2">
             <ErrorNote message={error} />
           </div>
@@ -142,12 +142,12 @@ export function ImportVisitsPage() {
 
       {stage.kind === 'importing' && (
         <SectionCard title="Importing…">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[var(--muted)]">
             {stage.progress.done} / {stage.progress.total} visits created
           </p>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--paper)]">
             <div
-              className="h-full bg-blue-600 transition-all"
+              className="h-full bg-[var(--teal)] transition-all"
               style={{ width: `${(100 * stage.progress.done) / Math.max(1, stage.progress.total)}%` }}
             />
           </div>
@@ -156,7 +156,7 @@ export function ImportVisitsPage() {
 
       {stage.kind === 'done' && (
         <SectionCard title="Import complete">
-          <ul className="space-y-1 text-sm text-slate-700">
+          <ul className="space-y-1 text-sm text-[var(--ink)]">
             <li>{stage.summary.patientsCreated} patients created</li>
             <li>{stage.summary.patientsReused} existing patients reused</li>
             <li>{stage.summary.visitsCreated} visits created</li>

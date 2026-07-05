@@ -28,13 +28,13 @@ export function InvoicePrintPage() {
   );
 
   if (!invoice) {
-    return <div className="p-8 text-sm text-slate-500">Invoice not found (or not yet synced).</div>;
+    return <div className="p-8 text-sm text-[var(--muted)]">Invoice not found (or not yet synced).</div>;
   }
 
   const therapistName = therapists?.find((t) => t.id === invoice.therapistId)?.name;
 
   return (
-    <div className="min-h-screen bg-slate-100 print:bg-white">
+    <div className="min-h-screen bg-[var(--paper)] print:bg-[var(--surface)]">
       <style>{`@page { size: ${paper}; margin: ${paper === 'A5' ? '10mm' : '16mm'}; }`}</style>
 
       <div className="no-print mx-auto flex max-w-3xl items-center gap-2 px-4 py-3">
@@ -56,25 +56,25 @@ export function InvoicePrintPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl bg-white p-8 shadow print:max-w-none print:p-0 print:shadow-none">
+      <div className="mx-auto max-w-3xl bg-[var(--surface)] p-8 print:max-w-none print:p-0">
         {/* Letterhead */}
-        <header className="flex items-start justify-between border-b border-slate-300 pb-4">
+        <header className="flex items-start justify-between border-b border-[var(--border)] pb-4">
           <div className="flex items-center gap-3">
             {logoUrl && <img src={logoUrl} alt="" className="h-14 w-auto object-contain" />}
             <div>
-              <h1 className="text-xl font-bold text-slate-900">{clinic.name}</h1>
-              {clinic.address && <p className="text-xs text-slate-600">{clinic.address}</p>}
-              <p className="text-xs text-slate-600">
+              <h1 className="font-display text-xl font-bold text-[var(--ink)]">{clinic.name}</h1>
+              {clinic.address && <p className="text-xs text-[var(--muted)]">{clinic.address}</p>}
+              <p className="text-xs text-[var(--muted)]">
                 {[clinic.phone, clinic.email].filter(Boolean).join(' · ')}
               </p>
-              {clinic.gstNo && <p className="text-xs text-slate-600">GSTIN: {clinic.gstNo}</p>}
+              {clinic.gstNo && <p className="text-xs text-[var(--muted)]">GSTIN: {clinic.gstNo}</p>}
             </div>
           </div>
           {clinic.partnerHospitalName && (
             <div className="flex items-center gap-2 text-right">
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-slate-400">In partnership with</p>
-                <p className="text-sm font-medium text-slate-700">{clinic.partnerHospitalName}</p>
+                <p className="text-[10px] uppercase tracking-wide text-[var(--muted)]">In partnership with</p>
+                <p className="text-sm font-medium text-[var(--ink)]">{clinic.partnerHospitalName}</p>
               </div>
               {partnerLogoUrl && (
                 <img src={partnerLogoUrl} alt="" className="h-10 w-auto object-contain" />
@@ -86,10 +86,10 @@ export function InvoicePrintPage() {
         {/* Invoice meta + patient */}
         <section className="mt-4 flex justify-between text-sm">
           <div>
-            <p className="font-semibold text-slate-900">{invoice.patientSnapshot.name}</p>
-            <p className="text-slate-600">MRNO: {invoice.patientSnapshot.mrno}</p>
+            <p className="font-display font-semibold text-[var(--ink)]">{invoice.patientSnapshot.name}</p>
+            <p className="text-[var(--muted)]">MRNO: {invoice.patientSnapshot.mrno}</p>
             {(invoice.patientSnapshot.age != null || invoice.patientSnapshot.sex) && (
-              <p className="text-slate-600">
+              <p className="text-[var(--muted)]">
                 {[
                   invoice.patientSnapshot.age != null ? `${invoice.patientSnapshot.age}y` : null,
                   invoice.patientSnapshot.sex,
@@ -100,16 +100,16 @@ export function InvoicePrintPage() {
             )}
           </div>
           <div className="text-right">
-            <p className="text-lg font-bold text-slate-900">INVOICE</p>
-            <p className="text-slate-700">{invoice.invoiceNo}</p>
-            <p className="text-slate-600">{invoice.issuedAt.slice(0, 10)}</p>
+            <p className="text-lg font-bold text-[var(--ink)]">INVOICE</p>
+            <p className="text-[var(--ink)]">{invoice.invoiceNo}</p>
+            <p className="text-[var(--muted)]">{invoice.issuedAt.slice(0, 10)}</p>
           </div>
         </section>
 
         {/* Line items */}
         <table className="mt-6 w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-300 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-[var(--border)] text-left text-xs uppercase tracking-wide text-[var(--muted)]">
               <th className="py-2">Service</th>
               <th className="py-2">Sessions</th>
               <th className="py-2 text-right">Catalog price</th>
@@ -119,26 +119,26 @@ export function InvoicePrintPage() {
           </thead>
           <tbody>
             {invoice.lineItems.map((li, i) => (
-              <tr key={i} className="border-b border-slate-100 align-top">
-                <td className="py-2 font-medium text-slate-800">{li.serviceName}</td>
-                <td className="py-2 text-slate-600">
+              <tr key={i} className="border-b border-[var(--border)] align-top">
+                <td className="py-2 font-medium text-[var(--ink)]">{li.serviceName}</td>
+                <td className="py-2 text-[var(--muted)]">
                   {li.sessionCount > 1 ? `${li.sessionDates.length} of ${li.sessionCount}` : '1'}
-                  <div className="text-xs text-slate-400">{li.sessionDates.join(', ')}</div>
+                  <div className="text-xs text-[var(--muted)]">{li.sessionDates.join(', ')}</div>
                 </td>
-                <td className="py-2 text-right tabular-nums">{formatINR(li.catalogPricePaise)}</td>
-                <td className="py-2 text-right tabular-nums">
+                <td className="font-num py-2 text-right">{formatINR(li.catalogPricePaise)}</td>
+                <td className="font-num py-2 text-right">
                   {li.adjustmentPaise !== 0 ? (
                     <>
                       {formatINR(li.adjustmentPaise)}
                       {li.adjustmentReason && (
-                        <div className="text-xs text-slate-400">{li.adjustmentReason}</div>
+                        <div className="text-xs text-[var(--muted)]">{li.adjustmentReason}</div>
                       )}
                     </>
                   ) : (
                     '—'
                   )}
                 </td>
-                <td className="py-2 text-right font-medium tabular-nums">
+                <td className="font-num py-2 text-right font-medium">
                   {formatINR(li.totalPaise)}
                 </td>
               </tr>
@@ -146,20 +146,20 @@ export function InvoicePrintPage() {
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={4} className="py-3 text-right font-semibold text-slate-900">
+              <td colSpan={4} className="py-3 text-right font-semibold text-[var(--ink)]">
                 Total
               </td>
-              <td className="py-3 text-right text-base font-bold tabular-nums text-slate-900">
+              <td className="font-num py-3 text-right text-base font-bold text-[var(--ink)]">
                 {formatINR(invoice.totalPaise)}
               </td>
             </tr>
           </tfoot>
         </table>
 
-        <p className="text-sm text-slate-600">Payment mode: {invoice.paymentMode}</p>
+        <p className="text-sm text-[var(--muted)]">Payment mode: {invoice.paymentMode}</p>
 
         {/* Footer */}
-        <footer className="mt-12 flex items-end justify-between border-t border-slate-200 pt-4 text-xs text-slate-500">
+        <footer className="mt-12 flex items-end justify-between border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">
           <div>
             <p>
               {invoice.invoiceNo} · issued {invoice.issuedAt.slice(0, 10)}
@@ -167,7 +167,7 @@ export function InvoicePrintPage() {
             {therapistName && <p>Therapist: {therapistName}</p>}
           </div>
           <div className="text-center">
-            <div className="mb-1 h-10 w-40 border-b border-slate-400" />
+            <div className="mb-1 h-10 w-40 border-b border-[var(--border)]" />
             <p>Authorised signature</p>
           </div>
         </footer>

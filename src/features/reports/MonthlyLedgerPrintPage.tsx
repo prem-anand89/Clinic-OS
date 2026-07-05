@@ -56,7 +56,7 @@ export function MonthlyLedgerPrintPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-100 print:bg-white">
+    <div className="min-h-screen bg-[var(--paper)] print:bg-[var(--surface)]">
       <style>{`@page { size: A4 landscape; margin: 12mm; }`}</style>
 
       <div className="no-print mx-auto flex max-w-6xl items-center gap-2 px-4 py-3">
@@ -68,25 +68,25 @@ export function MonthlyLedgerPrintPage() {
         </button>
       </div>
 
-      <div className="mx-auto max-w-6xl bg-white p-8 shadow print:max-w-none print:p-0 print:shadow-none">
+      <div className="mx-auto max-w-6xl bg-[var(--surface)] p-8 print:max-w-none print:p-0">
         {/* Letterhead */}
-        <header className="flex items-start justify-between border-b border-slate-300 pb-4">
+        <header className="flex items-start justify-between border-b border-[var(--border)] pb-4">
           <div className="flex items-center gap-3">
             {logoUrl && <img src={logoUrl} alt="" className="h-14 w-auto object-contain" />}
             <div>
-              <h1 className="text-xl font-bold text-slate-900">{clinic.name}</h1>
-              {clinic.address && <p className="text-xs text-slate-600">{clinic.address}</p>}
-              <p className="text-xs text-slate-600">
+              <h1 className="font-display text-xl font-bold text-[var(--ink)]">{clinic.name}</h1>
+              {clinic.address && <p className="text-xs text-[var(--muted)]">{clinic.address}</p>}
+              <p className="text-xs text-[var(--muted)]">
                 {[clinic.phone, clinic.email].filter(Boolean).join(' · ')}
               </p>
-              {clinic.gstNo && <p className="text-xs text-slate-600">GSTIN: {clinic.gstNo}</p>}
+              {clinic.gstNo && <p className="text-xs text-[var(--muted)]">GSTIN: {clinic.gstNo}</p>}
             </div>
           </div>
           {clinic.partnerHospitalName && (
             <div className="flex items-center gap-2 text-right">
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-slate-400">In partnership with</p>
-                <p className="text-sm font-medium text-slate-700">{clinic.partnerHospitalName}</p>
+                <p className="text-[10px] uppercase tracking-wide text-[var(--muted)]">In partnership with</p>
+                <p className="text-sm font-medium text-[var(--ink)]">{clinic.partnerHospitalName}</p>
               </div>
               {partnerLogoUrl && (
                 <img src={partnerLogoUrl} alt="" className="h-10 w-auto object-contain" />
@@ -96,8 +96,8 @@ export function MonthlyLedgerPrintPage() {
         </header>
 
         <div className="mt-4 flex items-baseline justify-between">
-          <h2 className="text-lg font-bold text-slate-900">Monthly Visit Ledger</h2>
-          <p className="text-sm text-slate-600">
+          <h2 className="text-lg font-bold text-[var(--ink)]">Monthly Visit Ledger</h2>
+          <p className="text-sm text-[var(--muted)]">
             {monthName(period.month)} {period.year} · FY {fy.label}
           </p>
         </div>
@@ -105,7 +105,7 @@ export function MonthlyLedgerPrintPage() {
         {/* Per-visit table */}
         <table className="mt-4 w-full text-xs">
           <thead>
-            <tr className="border-b border-slate-300 text-left uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-[var(--border)] text-left uppercase tracking-wide text-[var(--muted)]">
               <th className="py-1.5 pr-2">SN</th>
               <th className="py-1.5 pr-2">Date</th>
               <th className="py-1.5 pr-2">Day</th>
@@ -122,11 +122,11 @@ export function MonthlyLedgerPrintPage() {
             {sortedVisits.map((v, i) => {
               const p = patientById.get(v.patientId);
               return (
-                <tr key={v.id} className="border-b border-slate-100">
-                  <td className="py-1 pr-2 text-slate-500">{i + 1}</td>
+                <tr key={v.id} className="border-b border-[var(--border)]">
+                  <td className="py-1 pr-2 text-[var(--muted)]">{i + 1}</td>
                   <td className="py-1 pr-2">{v.visitDate}</td>
-                  <td className="py-1 pr-2 text-slate-500">{dayOfWeek(v.visitDate)}</td>
-                  <td className="py-1 pr-2 font-medium text-slate-800">{p?.name ?? '—'}</td>
+                  <td className="py-1 pr-2 text-[var(--muted)]">{dayOfWeek(v.visitDate)}</td>
+                  <td className="font-display py-1 pr-2 font-medium text-[var(--ink)]">{p?.name ?? '—'}</td>
                   <td className="py-1 pr-2">{p?.mrno ?? '—'}</td>
                   <td className="py-1 pr-2">
                     {p?.age ?? '—'} / {p?.sex ?? '—'}
@@ -136,18 +136,18 @@ export function MonthlyLedgerPrintPage() {
                   <td className="py-1 pr-2">
                     {serviceName.get(v.serviceCatalogId) ?? '—'}
                     {v.sessionIndex && v.packageTotal && (
-                      <span className="ml-1 text-slate-400">
+                      <span className="ml-1 text-[var(--muted)]">
                         {v.sessionIndex}/{v.packageTotal}
                       </span>
                     )}
                   </td>
-                  <td className="py-1 text-right tabular-nums">{formatINR(v.actualBillPaise)}</td>
+                  <td className="font-num py-1 text-right">{formatINR(v.actualBillPaise)}</td>
                 </tr>
               );
             })}
             {sortedVisits.length === 0 && (
               <tr>
-                <td colSpan={10} className="py-6 text-center text-slate-400">
+                <td colSpan={10} className="py-6 text-center text-[var(--muted)]">
                   No visits in this month.
                 </td>
               </tr>
@@ -156,12 +156,12 @@ export function MonthlyLedgerPrintPage() {
         </table>
 
         {/* Per-therapist summary */}
-        <h2 className="mt-8 text-sm font-bold text-slate-900">Monthly Summary</h2>
+        <h2 className="mt-8 text-sm font-bold text-[var(--ink)]">Monthly Summary</h2>
         <div className="mt-2 overflow-x-auto">
           <MonthlyReportTable report={report} own={labels.own} partner={labels.partner} />
         </div>
 
-        <footer className="mt-8 border-t border-slate-200 pt-3 text-xs text-slate-400">
+        <footer className="mt-8 border-t border-[var(--border)] pt-3 text-xs text-[var(--muted)]">
           Generated {new Date().toISOString().slice(0, 10)} · {clinic.name}
           {clinic.partnerHospitalName ? ` — ${clinic.partnerHospitalName}` : ''}
         </footer>

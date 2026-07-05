@@ -188,14 +188,14 @@ export function NewVisitPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="text-lg font-semibold text-slate-900">New visit</h1>
+      <h1 className="font-display text-lg font-semibold text-[var(--ink)]">New visit</h1>
 
       <SectionCard title="Patient">
         {patient ? (
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm font-medium text-slate-900">{patient.name}</div>
-              <div className="text-xs text-slate-500">
+              <div className="font-display text-sm font-medium text-[var(--ink)]">{patient.name}</div>
+              <div className="text-xs text-[var(--muted)]">
                 MRNO {patient.mrno}
                 {patient.age != null && ` · ${patient.age}y`}
                 {patient.sex && ` · ${patient.sex}`}
@@ -282,18 +282,18 @@ export function NewVisitPage() {
             {(matches ?? []).map((p) => (
               <button
                 key={p.id}
-                className="flex w-full items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-left text-sm hover:bg-slate-50"
+                className="flex w-full items-center justify-between rounded-md border border-[var(--border)] px-3 py-2 text-left text-sm hover:bg-[var(--paper)]"
                 onClick={() => {
                   setPatient(p);
                   if (p.primaryCondition) setCondition(p.primaryCondition);
                 }}
               >
                 <span>{p.name}</span>
-                <span className="text-xs text-slate-500">{p.mrno}</span>
+                <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
               </button>
             ))}
             {query.trim() && matches?.length === 0 && (
-              <p className="text-sm text-slate-500">No match.</p>
+              <p className="text-sm text-[var(--muted)]">No match.</p>
             )}
             <button className={btnSecondary} onClick={() => setCreatingPatient(true)}>
               + New patient
@@ -351,7 +351,7 @@ export function NewVisitPage() {
               />
               Package continuation (₹0){' '}
               {patient && !openPackages?.length && (
-                <span className="text-xs text-slate-400">— no open packages</span>
+                <span className="text-xs text-[var(--muted)]">— no open packages</span>
               )}
             </label>
           </div>

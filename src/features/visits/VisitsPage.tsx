@@ -91,9 +91,9 @@ export function VisitsPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <h1 className="text-lg font-semibold text-slate-900">Visits</h1>
+        <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Visits</h1>
         {filteredPatient && (
-          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">
+          <span className="rounded-full bg-[var(--teal-light)] px-3 py-1 text-xs text-[var(--teal)]">
             {filteredPatient.name} ({filteredPatient.mrno})
             <Link to="/visits" className="ml-2 font-medium">
               ✕
@@ -123,9 +123,9 @@ export function VisitsPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+      <div className="overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
+        <table className="min-w-full divide-y divide-[var(--border)]">
+          <thead className="bg-[var(--paper)]">
             <tr>
               <SortHeader label="Date" k="date" sort={sort} firstDir="desc" />
               <SortHeader label="Patient" k="patient" sort={sort} />
@@ -139,20 +139,20 @@ export function VisitsPage() {
               <th className={th}></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[var(--border)]">
             {sortedVisits.map((v) => {
               const p = patientById.get(v.patientId);
               return (
-                <tr key={v.id} className="hover:bg-slate-50">
+                <tr key={v.id} className="hover:bg-[var(--paper)]">
                   <td className={td}>{v.visitDate}</td>
                   <td className={td}>
-                    <div>{p?.name ?? '—'}</div>
-                    <div className="text-xs text-slate-400">{p?.mrno}</div>
+                    <div className="font-display">{p?.name ?? '—'}</div>
+                    <div className="text-xs text-[var(--muted)]">{p?.mrno}</div>
                   </td>
                   <td className={td}>
                     {therapistName.get(v.therapistId) ?? '—'}
                     {v.sharedTherapistId && (
-                      <div className="text-xs text-emerald-600" title="Internal revenue split">
+                      <div className="text-xs text-[var(--moss)]" title="Internal revenue split">
                         ⇄ {therapistName.get(v.sharedTherapistId) ?? '—'} {v.sharedPct}%
                       </div>
                     )}
@@ -160,7 +160,7 @@ export function VisitsPage() {
                   <td className={td}>
                     {serviceName.get(v.serviceCatalogId) ?? '—'}
                     {v.sessionIndex && v.packageTotal && (
-                      <span className="ml-1 text-xs text-slate-400">
+                      <span className="ml-1 text-xs text-[var(--muted)]">
                         {v.sessionIndex}/{v.packageTotal}
                       </span>
                     )}
@@ -176,13 +176,13 @@ export function VisitsPage() {
                       <Link
                         to="/invoices/$invoiceId/print"
                         params={{ invoiceId: v.invoiceId }}
-                        className="text-blue-600 hover:underline"
+                        className="text-[var(--teal)] hover:underline"
                       >
                         View
                       </Link>
                     ) : v.actualBillPaise > 0 ? (
                       <button
-                        className="text-blue-600 hover:underline"
+                        className="text-[var(--teal)] hover:underline"
                         onClick={() => {
                           setError(null);
                           setPaidNow(true);
@@ -192,14 +192,14 @@ export function VisitsPage() {
                         Invoice…
                       </button>
                     ) : (
-                      <span className="text-xs text-slate-400">₹0 session</span>
+                      <span className="text-xs text-[var(--muted)]">₹0 session</span>
                     )}
                   </td>
                   <td className={td}>
                     <div className="flex gap-3">
                       {v.actualBillPaise > 0 && (
                         <button
-                          className="text-xs text-slate-400 hover:text-emerald-600"
+                          className="text-xs text-[var(--muted)] hover:text-[var(--moss)]"
                           title="Share this visit's revenue with another therapist"
                           onClick={() => {
                             setError(null);
@@ -211,7 +211,7 @@ export function VisitsPage() {
                       )}
                       {!v.invoiceId && (
                         <button
-                          className="text-xs text-slate-400 hover:text-red-600"
+                          className="text-xs text-[var(--muted)] hover:text-[var(--rust)]"
                           title="Delete visit"
                           onClick={() => {
                             if (confirm('Delete this visit?')) void repos.visits.softDelete(v.id);
@@ -227,7 +227,7 @@ export function VisitsPage() {
             })}
             {visits?.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-3 py-8 text-center text-sm text-slate-400">
+                <td colSpan={10} className="px-3 py-8 text-center text-sm text-[var(--muted)]">
                   No visits match — log one with “New visit”.
                 </td>
               </tr>
@@ -237,10 +237,10 @@ export function VisitsPage() {
       </div>
 
       {invoicing && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-sm space-y-4 rounded-lg bg-white p-5 shadow-lg">
-            <h2 className="text-sm font-semibold text-slate-900">Issue invoice</h2>
-            <p className="text-sm text-slate-600">
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-[var(--ink)]/40 p-4">
+          <div className="w-full max-w-sm space-y-4 rounded-[10px] bg-[var(--surface)] p-5">
+            <h2 className="text-sm font-semibold text-[var(--ink)]">Issue invoice</h2>
+            <p className="text-sm text-[var(--muted)]">
               {patientById.get(invoicing.patientId)?.name} —{' '}
               {serviceName.get(invoicing.serviceCatalogId)}
               {invoicing.packageGroupId && ', all sessions of this package'}
@@ -267,7 +267,7 @@ export function VisitsPage() {
               </label>
             </div>
             <ErrorNote message={error} />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[var(--muted)]">
               The invoice number is issued by the server and the bill becomes immutable — this
               needs a connection and cannot be undone.
             </p>
@@ -332,10 +332,10 @@ function SplitModal({
   }
 
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 p-4">
-      <div className="w-full max-w-sm space-y-4 rounded-lg bg-white p-5 shadow-lg">
-        <h2 className="text-sm font-semibold text-slate-900">Share visit revenue</h2>
-        <p className="text-sm text-slate-600">
+    <div className="fixed inset-0 z-20 flex items-center justify-center bg-[var(--ink)]/40 p-4">
+      <div className="w-full max-w-sm space-y-4 rounded-[10px] bg-[var(--surface)] p-5">
+        <h2 className="text-sm font-semibold text-[var(--ink)]">Share visit revenue</h2>
+        <p className="text-sm text-[var(--muted)]">
           Credit part of this {formatINR(visit.actualBillPaise)} visit (billed under {primaryName}) to
           an assisting therapist. This is internal only — the billed amount, date, and therapist the
           hospital sees don’t change.
@@ -365,7 +365,7 @@ function SplitModal({
           />
         </Field>
         {preview != null && sharedTherapistId && (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[var(--muted)]">
             {formatINR(preview)} moves to {therapists.find((t) => t.id === sharedTherapistId)?.name} in
             the Shared column; {formatINR(visit.actualBillPaise - preview)} stays with {primaryName}.
           </p>

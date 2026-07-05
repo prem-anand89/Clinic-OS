@@ -63,7 +63,7 @@ export function SortHeader<K extends string>({
     <th className={numeric ? thNum : th}>
       <button
         type="button"
-        className="inline-flex items-center gap-1 rounded hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="inline-flex items-center gap-1 rounded hover:text-[var(--ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         onClick={() => sort.toggle(k, firstDir)}
       >
         {label}

@@ -66,8 +66,8 @@ export function Shell() {
   if (!clinic) {
     return (
       <Centered>
-        <div className="max-w-md space-y-3 text-center text-sm text-slate-600">
-          <p className="text-base font-medium text-slate-800">
+        <div className="max-w-md space-y-3 text-center text-sm text-[var(--muted)]">
+          <p className="font-display text-base font-medium text-[var(--ink)]">
             {syncKicked ? "You're signed in, but not on a clinic yet" : 'Preparing…'}
           </p>
           {syncKicked && (
@@ -80,7 +80,7 @@ export function Shell() {
             Sign out
           </button>
           {syncKicked && (
-            <details className="pt-2 text-left text-xs text-slate-400">
+            <details className="pt-2 text-left text-xs text-[var(--muted)]">
               <summary className="cursor-pointer select-none text-center">Technical details</summary>
               <p className="mt-2">
                 A membership row links your Supabase auth user to a clinic in{' '}
@@ -107,17 +107,17 @@ export function Shell() {
 
   return (
     <ClinicContext.Provider value={clinic}>
-      <div className="min-h-screen bg-slate-50">
-        <header className="no-print sticky top-0 z-10 border-b border-slate-200 bg-white">
+      <div className="min-h-screen bg-[var(--paper)]">
+        <header className="no-print sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface)]">
           <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
-            <div className="truncate text-sm font-semibold text-slate-900">{clinic.name}</div>
+            <div className="font-display truncate text-sm font-semibold text-[var(--ink)]">{clinic.name}</div>
             {/* Desktop nav */}
             <nav className="hidden gap-1 sm:flex">
               {NAV.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
-                  className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 [&.active]:bg-slate-100 [&.active]:font-medium [&.active]:text-slate-900"
+                  className="rounded-md px-3 py-1.5 text-sm text-[var(--muted)] hover:bg-[var(--paper)] [&.active]:bg-[var(--teal-light)] [&.active]:font-medium [&.active]:text-[var(--teal)]"
                 >
                   {item.label}
                 </Link>
@@ -126,14 +126,14 @@ export function Shell() {
             <div className="ml-auto flex items-center gap-3">
               <SyncBadge />
               <button
-                className="hidden text-xs text-slate-500 hover:text-slate-800 sm:block"
+                className="hidden text-xs text-[var(--muted)] hover:text-[var(--ink)] sm:block"
                 onClick={() => getSupabase()?.auth.signOut()}
               >
                 Sign out
               </button>
               {/* Mobile menu toggle */}
               <button
-                className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 sm:hidden"
+                className="rounded-md p-1.5 text-[var(--muted)] hover:bg-[var(--paper)] sm:hidden"
                 aria-label="Menu"
                 aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((o) => !o)}
@@ -150,19 +150,19 @@ export function Shell() {
           </div>
           {/* Mobile nav panel */}
           {menuOpen && (
-            <nav className="border-t border-slate-200 bg-white px-2 py-2 sm:hidden">
+            <nav className="border-t border-[var(--border)] bg-[var(--surface)] px-2 py-2 sm:hidden">
               {NAV.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
                   onClick={() => setMenuOpen(false)}
-                  className="block rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 [&.active]:bg-slate-100 [&.active]:font-medium [&.active]:text-slate-900"
+                  className="block rounded-md px-3 py-2 text-sm text-[var(--muted)] hover:bg-[var(--paper)] [&.active]:bg-[var(--teal-light)] [&.active]:font-medium [&.active]:text-[var(--teal)]"
                 >
                   {item.label}
                 </Link>
               ))}
               <button
-                className="mt-1 block w-full rounded-md px-3 py-2 text-left text-sm text-slate-500 hover:bg-slate-100"
+                className="mt-1 block w-full rounded-md px-3 py-2 text-left text-sm text-[var(--muted)] hover:bg-[var(--paper)]"
                 onClick={() => getSupabase()?.auth.signOut()}
               >
                 Sign out
@@ -171,7 +171,7 @@ export function Shell() {
           )}
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6">
-          <Suspense fallback={<div className="py-16 text-center text-sm text-slate-400">Loading…</div>}>
+          <Suspense fallback={<div className="py-16 text-center text-sm text-[var(--muted)]">Loading…</div>}>
             <Outlet />
           </Suspense>
         </main>

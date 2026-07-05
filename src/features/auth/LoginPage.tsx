@@ -14,8 +14,8 @@ export function LoginPage() {
 
   if (!hasSupabaseConfig) {
     return (
-      <div className="mx-auto mt-24 max-w-md rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-        <h1 className="mb-2 text-base font-semibold">Supabase not configured</h1>
+      <div className="mx-auto mt-24 max-w-md rounded-[10px] border border-[var(--rust)] bg-[var(--rust-light)] p-6 text-sm text-[var(--rust)]">
+        <h1 className="font-display mb-2 text-base font-semibold">Supabase not configured</h1>
         <p>
           Copy <code>.env.example</code> to <code>.env</code> and fill in your Supabase project URL
           and anon key, then restart the dev server. See the README for the one-time project setup
@@ -49,11 +49,11 @@ export function LoginPage() {
   if (mode === 'reset') {
     return (
       <div className="mx-auto mt-24 max-w-sm">
-        <h1 className="mb-1 text-center text-xl font-semibold text-slate-900">Clinic OS</h1>
-        <p className="mb-6 text-center text-sm text-slate-500">Reset your password</p>
-        <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 className="font-display mb-1 text-center text-xl font-semibold text-[var(--ink)]">Clinic OS</h1>
+        <p className="mb-6 text-center text-sm text-[var(--muted)]">Reset your password</p>
+        <div className="space-y-4 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-6">
           {resetSent ? (
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-[var(--ink)]">
               If an account exists for <span className="font-medium">{email}</span>, a reset link
               has been sent — check your email and follow the link to choose a new password.
             </p>
@@ -76,7 +76,7 @@ export function LoginPage() {
           )}
           <button
             type="button"
-            className="w-full text-center text-xs text-slate-500 hover:text-slate-800"
+            className="w-full text-center text-xs text-[var(--muted)] hover:text-[var(--ink)]"
             onClick={() => {
               setMode('signin');
               setError(null);
@@ -92,9 +92,9 @@ export function LoginPage() {
 
   return (
     <div className="mx-auto mt-24 max-w-sm">
-      <h1 className="mb-1 text-center text-xl font-semibold text-slate-900">Clinic OS</h1>
-      <p className="mb-6 text-center text-sm text-slate-500">Patient visit ledger</p>
-      <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <h1 className="font-display mb-1 text-center text-xl font-semibold text-[var(--ink)]">Clinic OS</h1>
+      <p className="mb-6 text-center text-sm text-[var(--muted)]">Patient visit ledger</p>
+      <form onSubmit={onSubmit} className="space-y-4 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-6">
         <Field label="Email">
           <input
             type="email"
@@ -119,7 +119,7 @@ export function LoginPage() {
         </button>
         <button
           type="button"
-          className="w-full text-center text-xs text-slate-500 hover:text-slate-800"
+          className="w-full text-center text-xs text-[var(--muted)] hover:text-[var(--ink)]"
           onClick={() => {
             setMode('reset');
             setError(null);
@@ -127,7 +127,7 @@ export function LoginPage() {
         >
           Forgot password?
         </button>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--muted)]">
           First sign-in needs a connection; after that the app works offline and syncs when back
           online.
         </p>

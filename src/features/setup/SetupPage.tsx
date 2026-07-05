@@ -27,15 +27,15 @@ import { toFriendlyMessage } from '@/lib/errors';
 export function SetupPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-slate-900">Setup</h1>
+      <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Setup</h1>
       <ClinicProfile />
       <Catalog />
       <Therapists />
       <SectionCard title="Historical data">
-        <p className="mb-3 text-xs text-slate-500">
+        <p className="mb-3 text-xs text-[var(--muted)]">
           One-time import of visits logged before go-live in the Excel ledger.
         </p>
-        <Link to="/setup/import-visits" className="text-sm text-blue-600 hover:underline">
+        <Link to="/setup/import-visits" className="text-sm text-[var(--teal)] hover:underline">
           Import historical visits from Excel →
         </Link>
       </SectionCard>
@@ -109,7 +109,7 @@ function DangerZone() {
 
   return (
     <SectionCard title="Danger zone">
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-[var(--muted)]">
         For test-data cleanup and troubleshooting. Wiping is admin-only and enforced by the server.
       </p>
       <div className="flex flex-wrap gap-2">
@@ -117,7 +117,7 @@ function DangerZone() {
           {busy ? 'Working…' : 'Reset local cache on this device'}
         </button>
         <button
-          className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+          className="rounded-md border border-[var(--rust)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--rust)] hover:bg-[var(--rust-light)] disabled:opacity-50"
           disabled={busy}
           onClick={() => void wipeAll()}
         >
@@ -290,9 +290,9 @@ function ClinicProfile() {
         <button className={btnPrimary} onClick={() => void save()}>
           Save clinic settings
         </button>
-        {saved && <span className="text-sm text-emerald-600">Saved ✓</span>}
+        {saved && <span className="text-sm text-[var(--moss)]">Saved ✓</span>}
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-[var(--muted)]">
         Split/tax changes apply to NEW visits only — past visits keep the rates they were billed
         under.
       </p>
@@ -346,14 +346,14 @@ function Catalog() {
 
   return (
     <SectionCard title="Service catalog">
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-[var(--muted)]">
         Price changes affect FUTURE visits only — logged visits keep their price snapshot.
         Deactivate instead of deleting so history keeps resolving; per-session price is always
         derived (price ÷ sessions), never stored.
       </p>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+        <table className="min-w-full divide-y divide-[var(--border)]">
+          <thead className="bg-[var(--paper)]">
             <tr>
               <th className={th}>Category</th>
               <th className={th}>Package</th>
@@ -363,7 +363,7 @@ function Catalog() {
               <th className={th}>Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[var(--border)]">
             {(items ?? []).map((item) => (
               <tr key={item.id} className={item.active ? '' : 'opacity-50'}>
                 <td className={td}>{item.category}</td>
@@ -378,7 +378,7 @@ function Catalog() {
                 <td className={tdNum}>{formatINR(effectivePricePerSession(item))}</td>
                 <td className={td}>
                   <button
-                    className="text-xs text-blue-600 hover:underline"
+                    className="text-xs text-[var(--teal)] hover:underline"
                     onClick={() => void toggleActive(item)}
                   >
                     {item.active ? 'Deactivate' : 'Reactivate'}
@@ -386,7 +386,7 @@ function Catalog() {
                 </td>
               </tr>
             ))}
-            <tr className="bg-slate-50/50">
+            <tr className="bg-[var(--paper)]/50">
               <td className={td}>
                 <input
                   className={inputCls}
@@ -459,9 +459,9 @@ function Therapists() {
       <ul className="mb-3 space-y-1">
         {(therapists ?? []).map((t) => (
           <li key={t.id} className="flex items-center gap-3 text-sm">
-            <span className={t.active ? '' : 'text-slate-400 line-through'}>{t.name}</span>
+            <span className={t.active ? '' : 'text-[var(--muted)] line-through'}>{t.name}</span>
             <button
-              className="text-xs text-blue-600 hover:underline"
+              className="text-xs text-[var(--teal)] hover:underline"
               onClick={() =>
                 void repos.therapists.put({
                   ...t,
@@ -486,7 +486,7 @@ function Therapists() {
           + Add
         </button>
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-[var(--muted)]">
         Deactivating keeps history intact — past visits still show the therapist.
       </p>
     </SectionCard>

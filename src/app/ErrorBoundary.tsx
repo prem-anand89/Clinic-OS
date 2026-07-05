@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <div className="mx-auto mt-24 max-w-md space-y-3 rounded-lg border border-red-200 bg-red-50 p-6 text-center text-sm text-red-800">
+        <div className="mx-auto mt-24 max-w-md space-y-3 rounded-[10px] border border-[var(--rust)] bg-[var(--rust-light)] p-6 text-center text-sm text-[var(--rust)]">
           <p className="text-base font-medium">Something went wrong.</p>
           <p>
             Try reloading the page. If it keeps happening, tell your admin — nothing you've saved
