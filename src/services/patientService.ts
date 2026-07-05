@@ -1,4 +1,4 @@
-import type { Patient, MrnoSource, UUID } from '@/domain/types';
+import type { Patient, MrnoSource, ReferringSource, UUID } from '@/domain/types';
 import type { Repos } from '@/repositories/types';
 import { getSupabase } from '@/lib/supabase';
 
@@ -10,6 +10,8 @@ export interface NewPatientInput {
   sex?: 'M' | 'F' | 'Other' | null;
   phone?: string | null;
   primaryCondition?: string | null;
+  referringSource?: ReferringSource | null;
+  referringSourceDetail?: string | null;
 }
 
 export interface UpdatePatientInput {
@@ -19,6 +21,8 @@ export interface UpdatePatientInput {
   sex?: 'M' | 'F' | 'Other' | null;
   phone?: string | null;
   primaryCondition?: string | null;
+  referringSource?: ReferringSource | null;
+  referringSourceDetail?: string | null;
 }
 
 /**
@@ -61,6 +65,8 @@ export function createPatientService(repos: Repos) {
         sex: input.sex ?? null,
         phone: input.phone?.trim() || null,
         primaryCondition: input.primaryCondition?.trim() || null,
+        referringSource: input.referringSource ?? null,
+        referringSourceDetail: input.referringSourceDetail?.trim() || null,
         deletedAt: null,
         updatedAt: new Date().toISOString(),
       };
@@ -103,6 +109,12 @@ export function createPatientService(repos: Repos) {
           patch.primaryCondition !== undefined
             ? patch.primaryCondition?.trim() || null
             : patient.primaryCondition,
+        referringSource:
+          patch.referringSource !== undefined ? patch.referringSource : patient.referringSource,
+        referringSourceDetail:
+          patch.referringSourceDetail !== undefined
+            ? patch.referringSourceDetail?.trim() || null
+            : patient.referringSourceDetail,
         updatedAt: new Date().toISOString(),
       };
       await repos.patients.put(updated);

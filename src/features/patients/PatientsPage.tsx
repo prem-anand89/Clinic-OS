@@ -3,7 +3,12 @@ import { Link } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, patientService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
-import type { Patient } from '@/domain/types';
+import {
+  referringSourceDetailLabel,
+  REFERRING_SOURCE_LABELS,
+  type Patient,
+  type ReferringSource,
+} from '@/domain/types';
 import { btnPrimary, btnSecondary, ErrorNote, Field, inputCls, Pill, td, th } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import { toFriendlyMessage } from '@/lib/errors';
@@ -235,6 +240,8 @@ function EditPatientModal({ patient, onClose }: { patient: Patient; onClose: () 
         sex: form.sex,
         phone: form.phone,
         primaryCondition: form.primaryCondition,
+        referringSource: form.referringSource,
+        referringSourceDetail: form.referringSourceDetail,
       });
       onClose();
     } catch (e) {
@@ -285,6 +292,36 @@ function EditPatientModal({ patient, onClose }: { patient: Patient; onClose: () 
               onChange={(e) => set({ primaryCondition: e.target.value || null })}
             />
           </Field>
+          <Field label="Referring source">
+            <select
+              className={inputCls}
+              value={form.referringSource ?? ''}
+              onChange={(e) =>
+                set({
+                  referringSource: (e.target.value || null) as ReferringSource | null,
+                  referringSourceDetail: null,
+                })
+              }
+            >
+              <option value="">—</option>
+              {(Object.entries(REFERRING_SOURCE_LABELS) as [ReferringSource, string][]).map(
+                ([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                )
+              )}
+            </select>
+          </Field>
+          {referringSourceDetailLabel(form.referringSource) && (
+            <Field label={referringSourceDetailLabel(form.referringSource)!}>
+              <input
+                className={inputCls}
+                value={form.referringSourceDetail ?? ''}
+                onChange={(e) => set({ referringSourceDetail: e.target.value || null })}
+              />
+            </Field>
+          )}
         </div>
         <ErrorNote message={error} />
         <div className="flex justify-end gap-2">

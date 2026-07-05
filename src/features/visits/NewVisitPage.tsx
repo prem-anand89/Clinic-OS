@@ -5,7 +5,14 @@ import { repos, visitService, patientService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import { DUPLICATE_NAME_THRESHOLD, nameSimilarity } from '@/domain/nameSimilarity';
-import { effectivePricePerSession, type Patient, type UUID } from '@/domain/types';
+import {
+  effectivePricePerSession,
+  referringSourceDetailLabel,
+  REFERRING_SOURCE_LABELS,
+  type Patient,
+  type ReferringSource,
+  type UUID,
+} from '@/domain/types';
 import { toFriendlyMessage } from '@/lib/errors';
 import {
   Field,
@@ -41,6 +48,8 @@ export function NewVisitPage() {
     sex: '',
     phone: '',
     primaryCondition: '',
+    referringSource: '' as ReferringSource | '',
+    referringSourceDetail: '',
   });
 
   // Visit fields
@@ -140,6 +149,8 @@ export function NewVisitPage() {
         sex: (newPatient.sex || null) as Patient['sex'],
         phone: newPatient.phone || null,
         primaryCondition: newPatient.primaryCondition || null,
+        referringSource: newPatient.referringSource || null,
+        referringSourceDetail: newPatient.referringSourceDetail || null,
       });
       setPatient(created);
       setCreatingPatient(false);
@@ -262,6 +273,37 @@ export function NewVisitPage() {
                 onChange={(e) => setNewPatient({ ...newPatient, primaryCondition: e.target.value })}
               />
             </Field>
+            <Field label="Referring source">
+              <select
+                className={inputCls}
+                value={newPatient.referringSource}
+                onChange={(e) =>
+                  setNewPatient({
+                    ...newPatient,
+                    referringSource: e.target.value as ReferringSource | '',
+                    referringSourceDetail: '',
+                  })
+                }
+              >
+                <option value="">—</option>
+                {(Object.entries(REFERRING_SOURCE_LABELS) as [ReferringSource, string][]).map(
+                  ([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  )
+                )}
+              </select>
+            </Field>
+            {referringSourceDetailLabel(newPatient.referringSource) && (
+              <Field label={referringSourceDetailLabel(newPatient.referringSource)!}>
+                <input
+                  className={inputCls}
+                  value={newPatient.referringSourceDetail}
+                  onChange={(e) => setNewPatient({ ...newPatient, referringSourceDetail: e.target.value })}
+                />
+              </Field>
+            )}
             <div className="col-span-2 flex gap-2">
               <button
                 className={btnPrimary}

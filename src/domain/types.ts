@@ -61,6 +61,40 @@ export function effectivePricePerSession(item: Pick<CatalogItem, 'basePricePaise
 
 export type MrnoSource = 'hospital' | 'auto';
 
+export type ReferringSource =
+  | 'hospital_referral'
+  | 'doctor_referral'
+  | 'walk_in'
+  | 'word_of_mouth'
+  | 'online'
+  | 'other';
+
+export const REFERRING_SOURCE_LABELS: Record<ReferringSource, string> = {
+  hospital_referral: 'Hospital referral',
+  doctor_referral: 'Doctor referral',
+  walk_in: 'Walk-in',
+  word_of_mouth: 'Word of mouth',
+  online: 'Online',
+  other: 'Other',
+};
+
+/** Label for the free-text detail field, or null if that source needs no detail. */
+export function referringSourceDetailLabel(source: ReferringSource | '' | null | undefined): string | null {
+  switch (source) {
+    case 'hospital_referral':
+    case 'doctor_referral':
+      return 'Referring doctor';
+    case 'word_of_mouth':
+      return 'Referred by (patient name)';
+    case 'online':
+      return 'Online channel (e.g. Google, Instagram)';
+    case 'other':
+      return 'Details';
+    default:
+      return null;
+  }
+}
+
 export interface Patient {
   id: UUID;
   clinicId: UUID;
@@ -71,6 +105,10 @@ export interface Patient {
   sex: 'M' | 'F' | 'Other' | null;
   phone: string | null;
   primaryCondition: string | null;
+  /** How the patient found the clinic. Optional: older cached rows lack the key. */
+  referringSource?: ReferringSource | null;
+  /** Free text alongside referringSource — which doctor, who referred them, which online channel. */
+  referringSourceDetail?: string | null;
   /** Set = hidden from search/pickers; visits keep resolving. Optional: older cached rows lack the key. */
   deletedAt?: string | null;
   updatedAt: string;

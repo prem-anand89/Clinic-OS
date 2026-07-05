@@ -38,6 +38,26 @@ function seedPatient(patients: Map<string, Patient>, overrides: Partial<Patient>
   return patient;
 }
 
+describe('patientService.create', () => {
+  it('stores the referring source and detail when given', async () => {
+    const fake = makeFakeRepos();
+    const patient = await createPatientService(fake.repos).create({
+      clinicId: 'clinic-1',
+      name: 'New Patient',
+      referringSource: 'doctor_referral',
+      referringSourceDetail: 'Dr. Mehta',
+    });
+    expect(patient).toMatchObject({ referringSource: 'doctor_referral', referringSourceDetail: 'Dr. Mehta' });
+  });
+
+  it('defaults referring source to null when omitted', async () => {
+    const fake = makeFakeRepos();
+    const patient = await createPatientService(fake.repos).create({ clinicId: 'clinic-1', name: 'New Patient' });
+    expect(patient.referringSource).toBeNull();
+    expect(patient.referringSourceDetail).toBeNull();
+  });
+});
+
 describe('patientService.update', () => {
   let fake: ReturnType<typeof makeFakeRepos>;
   beforeEach(() => {
@@ -95,5 +115,27 @@ describe('patientService.update', () => {
     const original = seedPatient(fake.patients, { mrnoSource: 'auto', mrno: 'W-260704-ABC' });
     const updated = await createPatientService(fake.repos).update(original.id, { mrno: 'H-999' });
     expect(updated.mrnoSource).toBe('auto');
+  });
+
+  it('sets the referring source and detail on an existing patient', async () => {
+    const original = seedPatient(fake.patients);
+    const updated = await createPatientService(fake.repos).update(original.id, {
+      referringSource: 'word_of_mouth',
+      referringSourceDetail: 'Referred by Anita Rao',
+    });
+    expect(updated).toMatchObject({
+      referringSource: 'word_of_mouth',
+      referringSourceDetail: 'Referred by Anita Rao',
+    });
+  });
+
+  it('clears the referring source to null rather than ignoring it', async () => {
+    const original = seedPatient(fake.patients, { referringSource: 'online', referringSourceDetail: 'Instagram' });
+    const updated = await createPatientService(fake.repos).update(original.id, {
+      referringSource: null,
+      referringSourceDetail: null,
+    });
+    expect(updated.referringSource).toBeNull();
+    expect(updated.referringSourceDetail).toBeNull();
   });
 });
