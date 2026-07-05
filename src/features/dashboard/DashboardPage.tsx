@@ -73,6 +73,52 @@ export function DashboardPage() {
     <div className="space-y-6">
       <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Dashboard</h1>
 
+      <SectionCard title="Open packages">
+        <p className="mb-3 text-xs text-[var(--muted)]">
+          Packages still short of their session count, most-quiet first. A patient not seen in over
+          14 days is flagged stale.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
+            <thead>
+              <tr>
+                <SortHeader label="Patient" k="patient" sort={packageSort} />
+                <th className={th}>Service</th>
+                <SortHeader label="Progress" k="progress" sort={packageSort} numeric />
+                <SortHeader label="Started" k="started" sort={packageSort} />
+                <th className={th}>Last visit</th>
+                <SortHeader label="Days since" k="days" sort={packageSort} numeric firstDir="desc" />
+                <th className={th}></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {sortedPackages.map((p) => (
+                <tr key={p.packageGroupId} className="hover:bg-[var(--paper)]">
+                  <td className={td}>
+                    <span className="font-display">{p.patientName}</span> <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
+                  </td>
+                  <td className={td}>{p.serviceName}</td>
+                  <td className={tdNum}>
+                    {p.sessionsLogged} of {p.packageTotal}
+                  </td>
+                  <td className={td}>{p.startedOn}</td>
+                  <td className={td}>{p.lastVisitOn}</td>
+                  <td className={tdNum}>{p.daysSinceLastVisit}</td>
+                  <td className={td}>{p.stale && <Pill tone="amber">⚠ Stale</Pill>}</td>
+                </tr>
+              ))}
+              {openPackages?.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
+                    No open packages in the last 6 months.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+
       <SectionCard title="Recent visits">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-[var(--border)] text-sm">
@@ -204,52 +250,6 @@ export function DashboardPage() {
                 <tr>
                   <td colSpan={4} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
                     No one has visited 3+ times in the last 30 days yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Open packages">
-        <p className="mb-3 text-xs text-[var(--muted)]">
-          Packages still short of their session count, most-quiet first. A patient not seen in over
-          14 days is flagged stale.
-        </p>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
-            <thead>
-              <tr>
-                <SortHeader label="Patient" k="patient" sort={packageSort} />
-                <th className={th}>Service</th>
-                <SortHeader label="Progress" k="progress" sort={packageSort} numeric />
-                <SortHeader label="Started" k="started" sort={packageSort} />
-                <th className={th}>Last visit</th>
-                <SortHeader label="Days since" k="days" sort={packageSort} numeric firstDir="desc" />
-                <th className={th}></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border)]">
-              {sortedPackages.map((p) => (
-                <tr key={p.packageGroupId} className="hover:bg-[var(--paper)]">
-                  <td className={td}>
-                    <span className="font-display">{p.patientName}</span> <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
-                  </td>
-                  <td className={td}>{p.serviceName}</td>
-                  <td className={tdNum}>
-                    {p.sessionsLogged} of {p.packageTotal}
-                  </td>
-                  <td className={td}>{p.startedOn}</td>
-                  <td className={td}>{p.lastVisitOn}</td>
-                  <td className={tdNum}>{p.daysSinceLastVisit}</td>
-                  <td className={td}>{p.stale && <Pill tone="amber">⚠ Stale</Pill>}</td>
-                </tr>
-              ))}
-              {openPackages?.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
-                    No open packages in the last 6 months.
                   </td>
                 </tr>
               )}

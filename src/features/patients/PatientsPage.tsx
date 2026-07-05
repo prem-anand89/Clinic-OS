@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, patientService } from '@/services';
@@ -9,6 +9,7 @@ import {
   type Patient,
   type ReferringSource,
 } from '@/domain/types';
+import { fiscalYearOf, monthsOfFiscalYear, monthDateRange, monthName } from '@/domain/fiscalYear';
 import { btnPrimary, btnSecondary, ErrorNote, Field, inputCls, Pill, td, th } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import { toFriendlyMessage } from '@/lib/errors';
@@ -30,13 +31,38 @@ export function PatientsPage() {
   const [editing, setEditing] = useState<Patient | null>(null);
   const sort = useSort<SortKey>('name');
 
+  const currentFy = fiscalYearOf(new Date(), clinic.fyStartMonth);
+  const [fyStartYear, setFyStartYear] = useState(currentFy.startYear);
+  const [month, setMonth] = useState(''); // '' = all time
+
+  const months = useMemo(
+    () => monthsOfFiscalYear(fyStartYear, clinic.fyStartMonth),
+    [fyStartYear, clinic.fyStartMonth]
+  );
+  const selectedPeriod = useMemo(() => {
+    if (!month) return null;
+    const [y, m] = month.split('-').map(Number);
+    return { year: y, month: m };
+  }, [month]);
+
+  const periodVisits = useLiveQuery(() => {
+    if (!selectedPeriod) return Promise.resolve(null);
+    const { from, to } = monthDateRange(selectedPeriod);
+    return repos.visits.list({ clinicId: clinic.id, from, to });
+  }, [clinic.id, selectedPeriod?.year, selectedPeriod?.month]);
+  const periodPatientIds = useMemo(
+    () => (periodVisits ? new Set(periodVisits.map((v) => v.patientId)) : null),
+    [periodVisits]
+  );
+
   const all = useLiveQuery(() => repos.patients.list(clinic.id), [clinic.id]);
 
   const q = query.trim().toLowerCase();
   const active = (all ?? []).filter(
     (p) =>
       !p.deletedAt &&
-      (!q || p.mrno.toLowerCase().startsWith(q) || p.name.toLowerCase().includes(q))
+      (!q || p.mrno.toLowerCase().startsWith(q) || p.name.toLowerCase().includes(q)) &&
+      (periodPatientIds === null || periodPatientIds.has(p.id))
   );
   const hidden = (all ?? []).filter((p) => p.deletedAt);
   const rows = applySort(active, COMPARATORS, sort);
@@ -91,15 +117,44 @@ export function PatientsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end gap-3">
+      <div className="flex flex-wrap items-end gap-3">
         <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Patients</h1>
-        <input
-          className={`${inputCls} ml-auto max-w-xs`}
-          placeholder="Search by MRNO or name…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <div className="ml-auto flex flex-wrap items-end gap-2">
+          <select
+            className={inputCls}
+            value={fyStartYear}
+            onChange={(e) => setFyStartYear(Number(e.target.value))}
+          >
+            {[currentFy.startYear - 2, currentFy.startYear - 1, currentFy.startYear].map((y) => (
+              <option key={y} value={y}>
+                FY {fiscalYearOf(new Date(y, clinic.fyStartMonth - 1, 1), clinic.fyStartMonth).label}
+              </option>
+            ))}
+          </select>
+          <select className={inputCls} value={month} onChange={(e) => setMonth(e.target.value)}>
+            <option value="">All time</option>
+            {months.map((m) => (
+              <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`}>
+                {monthName(m.month)} {m.year}
+              </option>
+            ))}
+          </select>
+          <input
+            className={`${inputCls} max-w-xs`}
+            placeholder="Search by MRNO or name…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
       </div>
+      {selectedPeriod && (
+        <p className="text-xs text-[var(--muted)]">
+          Showing patients seen in {monthName(selectedPeriod.month)} {selectedPeriod.year}.{' '}
+          <button className="font-medium text-[var(--teal)] hover:underline" onClick={() => setMonth('')}>
+            Show all time
+          </button>
+        </p>
+      )}
 
       {error && (
         <p className="rounded-md border border-[var(--rust)] bg-[var(--rust-light)] px-3 py-2 text-sm text-[var(--rust)]">
@@ -162,7 +217,11 @@ export function PatientsPage() {
             {rows.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-8 text-center text-sm text-[var(--muted)]">
-                  {q ? 'No patients match your search.' : 'No patients yet — they’re created from the “New visit” flow.'}
+                  {q
+                    ? 'No patients match your search.'
+                    : selectedPeriod
+                      ? 'No patients were seen in this period.'
+                      : 'No patients yet — they’re created from the “New visit” flow.'}
                 </td>
               </tr>
             )}

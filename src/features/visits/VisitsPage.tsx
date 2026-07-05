@@ -24,6 +24,15 @@ import { toFriendlyMessage } from '@/lib/errors';
 const PAYMENT_MODES: PaymentMode[] = ['Cash', 'Card', 'UPI', 'Insurance'];
 const PATIENT_SEARCH_LIMIT = 6;
 
+type DatePreset = 'week' | 'month' | 'lastMonth' | 'all' | 'custom';
+const DATE_PRESETS: { key: DatePreset; label: string }[] = [
+  { key: 'week', label: 'This week' },
+  { key: 'month', label: 'This month' },
+  { key: 'lastMonth', label: 'Last month' },
+  { key: 'all', label: 'All' },
+];
+const toIsoDate = (d: Date) => d.toISOString().slice(0, 10);
+
 export function VisitsPage() {
   const clinic = useClinic();
   const labels = clinicShareLabels(clinic);
@@ -32,6 +41,7 @@ export function VisitsPage() {
 
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [datePreset, setDatePreset] = useState<DatePreset>('all');
   const [therapistId, setTherapistId] = useState('');
   const [patientQuery, setPatientQuery] = useState('');
   const [invoicing, setInvoicing] = useState<Visit | null>(null);
@@ -40,6 +50,26 @@ export function VisitsPage() {
   const [paidNow, setPaidNow] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  function applyDatePreset(preset: DatePreset) {
+    setDatePreset(preset);
+    const now = new Date();
+    if (preset === 'week') {
+      const start = new Date(now);
+      start.setDate(start.getDate() - 6);
+      setFrom(toIsoDate(start));
+      setTo(toIsoDate(now));
+    } else if (preset === 'month') {
+      setFrom(toIsoDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+      setTo(toIsoDate(now));
+    } else if (preset === 'lastMonth') {
+      setFrom(toIsoDate(new Date(now.getFullYear(), now.getMonth() - 1, 1)));
+      setTo(toIsoDate(new Date(now.getFullYear(), now.getMonth(), 0)));
+    } else if (preset === 'all') {
+      setFrom('');
+      setTo('');
+    }
+  }
 
   const therapists = useLiveQuery(() => repos.therapists.list(clinic.id, true), [clinic.id]);
   const patients = useLiveQuery(() => repos.patients.list(clinic.id), [clinic.id]);
@@ -129,6 +159,22 @@ export function VisitsPage() {
           </span>
         )}
         <div className="ml-auto flex flex-wrap items-end gap-2">
+          <div className="flex gap-1 rounded-md border border-[var(--border)] p-1">
+            {DATE_PRESETS.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                className={`rounded px-2.5 py-1 text-xs font-medium ${
+                  datePreset === p.key
+                    ? 'bg-[var(--teal)] text-white'
+                    : 'text-[var(--muted)] hover:bg-[var(--paper)]'
+                }`}
+                onClick={() => applyDatePreset(p.key)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
           <div className="relative">
             <Field label="Find patient">
               <input
@@ -160,10 +206,26 @@ export function VisitsPage() {
             )}
           </div>
           <Field label="From">
-            <input type="date" className={inputCls} value={from} onChange={(e) => setFrom(e.target.value)} />
+            <input
+              type="date"
+              className={inputCls}
+              value={from}
+              onChange={(e) => {
+                setFrom(e.target.value);
+                setDatePreset('custom');
+              }}
+            />
           </Field>
           <Field label="To">
-            <input type="date" className={inputCls} value={to} onChange={(e) => setTo(e.target.value)} />
+            <input
+              type="date"
+              className={inputCls}
+              value={to}
+              onChange={(e) => {
+                setTo(e.target.value);
+                setDatePreset('custom');
+              }}
+            />
           </Field>
           <Field label="Therapist">
             <select className={inputCls} value={therapistId} onChange={(e) => setTherapistId(e.target.value)}>
