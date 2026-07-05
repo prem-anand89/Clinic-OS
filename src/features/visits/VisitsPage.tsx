@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, dashboardService, invoiceService, paymentService, visitService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
+import { formatDateDMY } from '@/domain/fiscalYear';
 import { clinicShareLabels, type PaymentMode, type Therapist, type Visit } from '@/domain/types';
 import {
   btnPrimary,
@@ -240,7 +241,7 @@ export function VisitsPage() {
                     <td className={tdNum}>
                       {p.sessionsLogged} of {p.packageTotal}
                     </td>
-                    <td className={td}>{p.lastVisitOn}</td>
+                    <td className={td}>{formatDateDMY(p.lastVisitOn)}</td>
                     <td className={tdNum}>{p.daysSinceLastVisit}</td>
                     <td className={td}>
                       <Link
@@ -299,7 +300,7 @@ export function VisitsPage() {
               const p = patientById.get(v.patientId);
               return (
                 <tr key={v.id} className="hover:bg-[var(--paper)]">
-                  <td className={td}>{v.visitDate}</td>
+                  <td className={td}>{formatDateDMY(v.visitDate)}</td>
                   <td className={td}>
                     <div className="font-display">{p?.name ?? '—'}</div>
                     <div className="text-xs text-[var(--muted)]">{p?.mrno}</div>

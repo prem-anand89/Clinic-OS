@@ -9,7 +9,7 @@ import {
   type Patient,
   type ReferringSource,
 } from '@/domain/types';
-import { fiscalYearOf, monthsOfFiscalYear, monthDateRange, monthName } from '@/domain/fiscalYear';
+import { fiscalYearOf, monthsOfFiscalYear, monthDateRange, monthName, formatDateDMY } from '@/domain/fiscalYear';
 import { btnPrimary, btnSecondary, ErrorNote, Field, inputCls, Pill, td, th } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import { toFriendlyMessage } from '@/lib/errors';
@@ -249,7 +249,7 @@ export function PatientsPage() {
                       <span className="font-display">{p.name}</span> <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
                     </td>
                     <td className={td}>
-                      <Pill tone="slate">Hidden {p.deletedAt?.slice(0, 10)}</Pill>
+                      <Pill tone="slate">Hidden {p.deletedAt && formatDateDMY(p.deletedAt)}</Pill>
                     </td>
                     <td className={`${td} whitespace-nowrap text-right`}>
                       <button

@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, visitService, patientService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
+import { formatDateDMY } from '@/domain/fiscalYear';
 import { DUPLICATE_NAME_THRESHOLD, nameSimilarity } from '@/domain/nameSimilarity';
 import {
   effectivePricePerSession,
@@ -439,7 +440,7 @@ export function NewVisitPage() {
                 {(openPackages ?? []).map((p) => (
                   <option key={p.packageGroupId} value={p.packageGroupId}>
                     {p.serviceName} — session {p.logged + 1} of {p.packageTotal} (started{' '}
-                    {p.startedOn})
+                    {formatDateDMY(p.startedOn)})
                   </option>
                 ))}
               </select>

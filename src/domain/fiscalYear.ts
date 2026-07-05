@@ -57,3 +57,9 @@ export function monthDateRange({ year, month }: FyMonth): { from: string; to: st
   const to = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
   return { from, to };
 }
+
+/** ISO date (or timestamp) to display format, e.g. "2026-07-05" -> "05/07/26". */
+export function formatDateDMY(isoDate: string): string {
+  const [y, m, d] = isoDate.slice(0, 10).split('-');
+  return `${d}/${m}/${y.slice(2)}`;
+}

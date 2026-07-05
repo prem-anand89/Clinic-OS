@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { repos } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
+import { formatDateDMY } from '@/domain/fiscalYear';
 import { publicLogoUrl } from '@/lib/supabase';
 import { btnPrimary, btnSecondary, inputCls } from '@/components/ui';
 
@@ -95,7 +96,7 @@ export function InvoicePrintPage() {
           <div className="text-right">
             <p className="text-lg font-bold text-[var(--ink)]">INVOICE</p>
             <p className="text-[var(--ink)]">{invoice.invoiceNo}</p>
-            <p className="text-[var(--muted)]">{invoice.issuedAt.slice(0, 10)}</p>
+            <p className="text-[var(--muted)]">{formatDateDMY(invoice.issuedAt)}</p>
           </div>
         </section>
 
@@ -116,7 +117,9 @@ export function InvoicePrintPage() {
                 <td className="py-2 font-medium text-[var(--ink)]">{li.serviceName}</td>
                 <td className="py-2 text-[var(--muted)]">
                   {li.sessionCount > 1 ? `${li.sessionDates.length} of ${li.sessionCount}` : '1'}
-                  <div className="text-xs text-[var(--muted)]">{li.sessionDates.join(', ')}</div>
+                  <div className="text-xs text-[var(--muted)]">
+                    {li.sessionDates.map(formatDateDMY).join(', ')}
+                  </div>
                 </td>
                 <td className="font-num py-2 text-right">{formatINR(li.catalogPricePaise)}</td>
                 <td className="font-num py-2 text-right">
@@ -155,7 +158,7 @@ export function InvoicePrintPage() {
         <footer className="mt-12 flex items-end justify-between border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">
           <div>
             <p>
-              {invoice.invoiceNo} · issued {invoice.issuedAt.slice(0, 10)}
+              {invoice.invoiceNo} · issued {formatDateDMY(invoice.issuedAt)}
             </p>
             {therapistName && <p>Therapist: {therapistName}</p>}
           </div>

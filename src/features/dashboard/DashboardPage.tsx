@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { dashboardService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
-import { monthName } from '@/domain/fiscalYear';
+import { monthName, formatDateDMY } from '@/domain/fiscalYear';
 import { clinicShareLabels } from '@/domain/types';
 import { Pill, SectionCard, StatTile, th, thNum, td, tdNum } from '@/components/ui';
 import { BarChart } from '@/components/BarChart';
@@ -101,8 +101,8 @@ export function DashboardPage() {
                   <td className={tdNum}>
                     {p.sessionsLogged} of {p.packageTotal}
                   </td>
-                  <td className={td}>{p.startedOn}</td>
-                  <td className={td}>{p.lastVisitOn}</td>
+                  <td className={td}>{formatDateDMY(p.startedOn)}</td>
+                  <td className={td}>{formatDateDMY(p.lastVisitOn)}</td>
                   <td className={tdNum}>{p.daysSinceLastVisit}</td>
                   <td className={td}>{p.stale && <Pill tone="amber">⚠ Stale</Pill>}</td>
                 </tr>
@@ -135,7 +135,7 @@ export function DashboardPage() {
             <tbody className="divide-y divide-[var(--border)]">
               {(recentVisits ?? []).map((v) => (
                 <tr key={v.visitId} className="hover:bg-[var(--paper)]">
-                  <td className={td}>{v.visitDate}</td>
+                  <td className={td}>{formatDateDMY(v.visitDate)}</td>
                   <td className={td}>
                     <span className="font-display">{v.patientName}</span>{' '}
                     <span className="text-xs text-[var(--muted)]">{v.mrno}</span>
@@ -187,7 +187,7 @@ export function DashboardPage() {
                     <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
                   </td>
                   <td className={td}>{p.serviceName}</td>
-                  <td className={td}>{p.visitDate}</td>
+                  <td className={td}>{formatDateDMY(p.visitDate)}</td>
                   <td className={tdNum}>{p.daysSince}</td>
                   <td className={td}>
                     <Link
@@ -234,7 +234,7 @@ export function DashboardPage() {
                     <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
                   </td>
                   <td className={tdNum}>{p.visitCount}</td>
-                  <td className={td}>{p.lastVisitOn}</td>
+                  <td className={td}>{formatDateDMY(p.lastVisitOn)}</td>
                   <td className={td}>
                     <Link
                       to="/visits"
@@ -290,7 +290,7 @@ export function DashboardPage() {
                     <span className="font-display">{r.patientName}</span> <span className="text-xs text-[var(--muted)]">{r.mrno}</span>
                   </td>
                   <td className={tdNum}>{formatINR(r.totalPaise)}</td>
-                  <td className={td}>{r.issuedAt.slice(0, 10)}</td>
+                  <td className={td}>{formatDateDMY(r.issuedAt)}</td>
                   <td className={tdNum}>{r.daysOutstanding}</td>
                 </tr>
               ))}

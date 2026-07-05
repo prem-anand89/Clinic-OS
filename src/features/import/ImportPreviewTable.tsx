@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { CatalogItem } from '@/domain/types';
 import { formatINR } from '@/domain/money';
+import { formatDateDMY } from '@/domain/fiscalYear';
 import type { ImportPreview, PreviewRow, Resolutions, RowResolution } from '@/services/importVisitsService';
 import { inputCls, td, th } from '@/components/ui';
 
@@ -189,7 +190,7 @@ export function ImportPreviewTable({
             <tbody className="divide-y divide-[var(--border)]">
               {preview.rows.map((row) => (
                 <tr key={row.key} className={row.blockingIssues.length ? 'bg-[var(--rust-light)]' : ''}>
-                  <td className={td}>{row.visitDate ?? '—'}</td>
+                  <td className={td}>{row.visitDate ? formatDateDMY(row.visitDate) : '—'}</td>
                   <td className={td}>{row.patientNameCanonical}</td>
                   <td className={td}>{row.mrno}</td>
                   <td className={td}>{row.raw.therapistName}</td>

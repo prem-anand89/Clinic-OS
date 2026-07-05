@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, paymentService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
+import { formatDateDMY } from '@/domain/fiscalYear';
 import type { Invoice, PaymentStatus } from '@/domain/types';
 import { Pill, th, td, tdNum } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
@@ -62,7 +63,7 @@ export function InvoicesPage() {
               return (
                 <tr key={inv.id} className="hover:bg-[var(--paper)]">
                   <td className={`${td} font-medium`}>{inv.invoiceNo}</td>
-                  <td className={td}>{inv.issuedAt.slice(0, 10)}</td>
+                  <td className={td}>{formatDateDMY(inv.issuedAt)}</td>
                   <td className={`${td} font-display`}>{inv.patientSnapshot.name}</td>
                   <td className={td}>{inv.patientSnapshot.mrno}</td>
                   <td className={tdNum}>{formatINR(inv.totalPaise)}</td>
