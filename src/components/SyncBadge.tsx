@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type OutboxEntry } from '@/lib/db';
 import { syncStatus } from '@/sync/status';

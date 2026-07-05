@@ -33,7 +33,7 @@ const PAGE = 1000;
 // version — force them back to numbers on the way in.
 const NUMERIC_FIELDS: Partial<Record<SyncedTable, string[]>> = {
   clinics: ['bmSplitPct', 'taxPct', 'fyStartMonth'],
-  visits: ['bmSplitPct', 'taxPct'],
+  visits: ['bmSplitPct', 'taxPct', 'sharedPct'],
 };
 
 function normalize(table: SyncedTable, obj: Record<string, unknown>) {
