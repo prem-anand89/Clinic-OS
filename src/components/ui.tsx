@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { paiseToRupees, rupeesToPaise, type Paise } from '@/domain/money';
 
 export const inputCls =
@@ -87,16 +87,31 @@ export function Pill({ tone, children }: { tone: keyof typeof PILL_TONES; childr
   );
 }
 
-/** Small "?" affordance explaining a jargon term inline, via native tooltip. */
+/**
+ * Small "?" affordance explaining a jargon term inline. A tap/click toggles a
+ * visible bubble — relying on the native `title` attribute alone doesn't
+ * work on phones/tablets, since there's no hover state to trigger it, and
+ * these are aimed squarely at non-technical staff who may be on one.
+ */
 export function InfoTip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
   return (
-    <span
-      tabIndex={0}
-      title={text}
-      aria-label={text}
-      className="ml-1 inline-flex h-3.5 w-3.5 shrink-0 cursor-help select-none items-center justify-center rounded-full bg-slate-200 align-middle text-[10px] font-semibold leading-none text-slate-500 hover:bg-slate-300"
-    >
-      ?
+    <span className="relative inline-block align-middle">
+      <button
+        type="button"
+        aria-label={text}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        onBlur={() => setOpen(false)}
+        className="ml-1 inline-flex h-3.5 w-3.5 shrink-0 select-none items-center justify-center rounded-full bg-slate-200 text-[10px] font-semibold leading-none text-slate-500 hover:bg-slate-300"
+      >
+        ?
+      </button>
+      {open && (
+        <span className="absolute right-0 top-full z-30 mt-1 w-52 rounded-md bg-slate-800 px-2.5 py-1.5 text-left text-xs font-normal leading-snug text-white shadow-lg">
+          {text}
+        </span>
+      )}
     </span>
   );
 }
