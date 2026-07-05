@@ -119,7 +119,7 @@ export function PatientsPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
         <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Patients</h1>
-        <div className="ml-auto flex flex-wrap items-end gap-2">
+        <div className="ml-auto flex items-end gap-2">
           <select
             className={inputCls}
             value={fyStartYear}

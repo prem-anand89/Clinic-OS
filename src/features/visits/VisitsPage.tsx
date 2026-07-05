@@ -159,22 +159,6 @@ export function VisitsPage() {
           </span>
         )}
         <div className="ml-auto flex flex-wrap items-end gap-2">
-          <div className="flex gap-1 rounded-md border border-[var(--border)] p-1">
-            {DATE_PRESETS.map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                className={`rounded px-2.5 py-1 text-xs font-medium ${
-                  datePreset === p.key
-                    ? 'bg-[var(--teal)] text-white'
-                    : 'text-[var(--muted)] hover:bg-[var(--paper)]'
-                }`}
-                onClick={() => applyDatePreset(p.key)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
           <div className="relative">
             <Field label="Find patient">
               <input
@@ -246,7 +230,7 @@ export function VisitsPage() {
       <div className="flex flex-wrap gap-3">
         <StatTile label="This week's visits" value={weeklySummary?.visitCount ?? 0} />
         <StatTile label="This week's billed" value={formatINR(weeklySummary?.billedPaise ?? 0)} />
-        <StatTile label="New packages this month" value={monthlyNew?.newPackages ?? 0} />
+        <StatTile label="Packages this month" value={monthlyNew?.newPackages ?? 0} />
         <StatTile label="New patients this month" value={monthlyNew?.newPatients ?? 0} />
       </div>
 
@@ -296,6 +280,25 @@ export function VisitsPage() {
           </div>
         </SectionCard>
       )}
+
+      <div className="flex justify-end">
+        <div className="flex gap-1 rounded-md border border-[var(--border)] p-1">
+          {DATE_PRESETS.map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              className={`rounded px-2.5 py-1 text-xs font-medium ${
+                datePreset === p.key
+                  ? 'bg-[var(--teal)] text-white'
+                  : 'text-[var(--muted)] hover:bg-[var(--paper)]'
+              }`}
+              onClick={() => applyDatePreset(p.key)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
         <table className="min-w-full divide-y divide-[var(--border)]">
