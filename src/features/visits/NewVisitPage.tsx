@@ -63,6 +63,21 @@ export function NewVisitPage() {
     () => (patient ? Promise.resolve([]) : repos.patients.search(clinic.id, query)),
     [clinic.id, query, patient]
   );
+  const allPatients = useLiveQuery(() => repos.patients.list(clinic.id), [clinic.id]);
+
+  // Live typo-level near-miss check as the name is typed (MRNO stays the
+  // true identifier) — surfaces before submit so "Ramesh Kummar" is caught
+  // while the receptionist is still looking at the field, not after.
+  const duplicateMatch = useMemo(() => {
+    const typed = newPatient.name.trim();
+    if (!typed) return null;
+    let best: { name: string; mrno: string; score: number } | null = null;
+    for (const p of (allPatients ?? []).filter((p) => !p.deletedAt)) {
+      const score = nameSimilarity(p.name, typed);
+      if (!best || score > best.score) best = { name: p.name, mrno: p.mrno, score };
+    }
+    return best && best.score >= DUPLICATE_NAME_THRESHOLD ? best : null;
+  }, [allPatients, newPatient.name]);
 
   const openPackages = useLiveQuery(async (): Promise<OpenPackage[]> => {
     if (!patient) return [];
@@ -117,23 +132,6 @@ export function NewVisitPage() {
   async function createPatient() {
     setError(null);
     try {
-      // Typo-level near-miss check (MRNO stays the true identifier) — warn
-      // before creating "Ramesh Kummar" when "Ramesh Kumar" already exists.
-      const existing = (await repos.patients.list(clinic.id)).filter((p) => !p.deletedAt);
-      let best: { name: string; mrno: string; score: number } | null = null;
-      for (const p of existing) {
-        const score = nameSimilarity(p.name, newPatient.name);
-        if (!best || score > best.score) best = { name: p.name, mrno: p.mrno, score };
-      }
-      if (
-        best &&
-        best.score >= DUPLICATE_NAME_THRESHOLD &&
-        !confirm(
-          `A patient named "${best.name}" (MRNO ${best.mrno}) already exists.\n\nCreate "${newPatient.name.trim()}" as a NEW patient anyway? If this is the same person, cancel and pick them from the search instead.`
-        )
-      ) {
-        return;
-      }
       const created = await patientService.create({
         clinicId: clinic.id,
         name: newPatient.name,
@@ -214,6 +212,13 @@ export function NewVisitPage() {
                 onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
               />
             </Field>
+            {duplicateMatch && (
+              <p className="col-span-2 rounded-md border border-[var(--rust)] bg-[var(--rust-light)] px-3 py-2 text-sm text-[var(--rust)]">
+                ⚠ A patient named "{duplicateMatch.name}" (MRNO {duplicateMatch.mrno}) already exists.
+                If this is the same person, use "Back to search" below instead of creating a new
+                record.
+              </p>
+            )}
             <Field label="MRNO (leave blank to auto-generate for walk-ins)">
               <input
                 className={inputCls}

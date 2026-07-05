@@ -42,8 +42,19 @@ export interface RecentVisitRow {
   mrno: string;
   therapistName: string;
   serviceName: string;
+  treatmentNotes: string | null;
   billPaise: Paise;
   hasInvoice: boolean;
+}
+
+export interface WeeklySummary {
+  visitCount: number;
+  billedPaise: Paise;
+}
+
+export interface MonthlyNewCounts {
+  newPackages: number;
+  newPatients: number;
 }
 
 export interface SingleVisitPatientRow {
@@ -180,6 +191,7 @@ export function createDashboardService(repos: Repos) {
           mrno: patientById.get(v.patientId)?.mrno ?? '—',
           therapistName: therapistNameById.get(v.therapistId) ?? '—',
           serviceName: serviceNameById.get(v.serviceCatalogId) ?? '—',
+          treatmentNotes: v.treatmentNotes,
           billPaise: v.actualBillPaise,
           hasInvoice: Boolean(v.invoiceId),
         }));
@@ -254,6 +266,48 @@ export function createDashboardService(repos: Repos) {
         });
       }
       return rows.sort((a, b) => b.visitCount - a.visitCount);
+    },
+
+    /** Rolling window ending today — clinic-wide, independent of any table filters. */
+    async weeklySummary(clinicId: UUID, days = 7): Promise<WeeklySummary> {
+      const visits = await repos.visits.list({ clinicId });
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - (days - 1));
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+      const recent = visits.filter((v) => v.visitDate >= cutoffStr);
+      return {
+        visitCount: recent.length,
+        billedPaise: recent.reduce((sum, v) => sum + v.actualBillPaise, 0),
+      };
+    },
+
+    /**
+     * Packages and patients whose FIRST-EVER visit falls in the given
+     * calendar month — "new" this month, not just active this month.
+     */
+    async monthlyNewCounts(clinicId: UUID, asOf = new Date()): Promise<MonthlyNewCounts> {
+      const visits = await repos.visits.list({ clinicId });
+      const monthStart = `${asOf.getFullYear()}-${String(asOf.getMonth() + 1).padStart(2, '0')}-01`;
+
+      const packageGroups = new Map<UUID, Visit[]>();
+      for (const v of visits) {
+        if (!v.packageGroupId) continue;
+        if (!packageGroups.has(v.packageGroupId)) packageGroups.set(v.packageGroupId, []);
+        packageGroups.get(v.packageGroupId)!.push(v);
+      }
+      let newPackages = 0;
+      for (const group of packageGroups.values()) {
+        const earliest = group.map((v) => v.visitDate).sort()[0];
+        if (earliest >= monthStart) newPackages++;
+      }
+
+      let newPatients = 0;
+      for (const patientVisits of groupByPatient(visits).values()) {
+        const earliest = patientVisits.map((v) => v.visitDate).sort()[0];
+        if (earliest >= monthStart) newPatients++;
+      }
+
+      return { newPackages, newPatients };
     },
   };
 }

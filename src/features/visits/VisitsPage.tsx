@@ -15,7 +15,6 @@ import {
   tdNum,
   ErrorNote,
   Field,
-  Pill,
   SectionCard,
   StatTile,
 } from '@/components/ui';
@@ -23,7 +22,6 @@ import { applySort, byNumber, byString, SortHeader, useSort } from '@/components
 import { toFriendlyMessage } from '@/lib/errors';
 
 const PAYMENT_MODES: PaymentMode[] = ['Cash', 'Card', 'UPI', 'Insurance'];
-const RECENT_VISITS_LIMIT = 8;
 const PATIENT_SEARCH_LIMIT = 6;
 
 export function VisitsPage() {
@@ -75,23 +73,11 @@ export function VisitsPage() {
       .slice(0, PATIENT_SEARCH_LIMIT);
   }, [patients, patientQuery]);
 
-  const recentVisits = useLiveQuery(
-    () => dashboardService.recentVisits(clinic.id, RECENT_VISITS_LIMIT),
-    [clinic.id]
-  );
   const openPackages = useLiveQuery(() => dashboardService.openPackages(clinic.id), [clinic.id]);
   const followUps = useMemo(() => (openPackages ?? []).filter((p) => p.stale), [openPackages]);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const todayVisits = useMemo(() => (visits ?? []).filter((v) => v.visitDate === todayStr), [visits, todayStr]);
-  const todayBillPaise = useMemo(
-    () => todayVisits.reduce((sum, v) => sum + v.actualBillPaise, 0),
-    [todayVisits]
-  );
-  const pendingInvoiceCount = useMemo(
-    () => (visits ?? []).filter((v) => !v.invoiceId && v.actualBillPaise > 0).length,
-    [visits]
-  );
+  const weeklySummary = useLiveQuery(() => dashboardService.weeklySummary(clinic.id), [clinic.id]);
+  const monthlyNew = useLiveQuery(() => dashboardService.monthlyNewCounts(clinic.id), [clinic.id]);
 
   const sort = useSort<'date' | 'patient' | 'therapist' | 'bill' | 'bmShare' | 'postTax'>('date', 'desc');
   const sortedVisits = applySort(
@@ -196,9 +182,10 @@ export function VisitsPage() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <StatTile label="Today's visits" value={todayVisits.length} />
-        <StatTile label="Today's billed" value={formatINR(todayBillPaise)} />
-        <StatTile label="Pending invoices" value={pendingInvoiceCount} />
+        <StatTile label="This week's visits" value={weeklySummary?.visitCount ?? 0} />
+        <StatTile label="This week's billed" value={formatINR(weeklySummary?.billedPaise ?? 0)} />
+        <StatTile label="New packages this month" value={monthlyNew?.newPackages ?? 0} />
+        <StatTile label="New patients this month" value={monthlyNew?.newPatients ?? 0} />
       </div>
 
       {followUps.length > 0 && (
@@ -247,53 +234,6 @@ export function VisitsPage() {
           </div>
         </SectionCard>
       )}
-
-      <SectionCard title="Recent visits">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
-            <thead>
-              <tr>
-                <th className={th}>Date</th>
-                <th className={th}>Patient</th>
-                <th className={th}>Therapist</th>
-                <th className={th}>Service</th>
-                <th className={thNum}>Bill</th>
-                <th className={th}>Invoice</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border)]">
-              {(recentVisits ?? []).map((v) => (
-                <tr key={v.visitId} className="hover:bg-[var(--paper)]">
-                  <td className={td}>{v.visitDate}</td>
-                  <td className={td}>
-                    <span className="font-display">{v.patientName}</span>{' '}
-                    <span className="text-xs text-[var(--muted)]">{v.mrno}</span>
-                  </td>
-                  <td className={td}>{v.therapistName}</td>
-                  <td className={td}>{v.serviceName}</td>
-                  <td className={tdNum}>{formatINR(v.billPaise)}</td>
-                  <td className={td}>
-                    {v.hasInvoice ? (
-                      <Pill tone="green">Invoiced</Pill>
-                    ) : v.billPaise > 0 ? (
-                      <Pill tone="amber">Not invoiced</Pill>
-                    ) : (
-                      <span className="text-xs text-[var(--muted)]">₹0 session</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {recentVisits?.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
-                    No visits logged yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </SectionCard>
 
       <div className="overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
         <table className="min-w-full divide-y divide-[var(--border)]">

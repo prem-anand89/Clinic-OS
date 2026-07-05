@@ -11,6 +11,8 @@ import { BarChart } from '@/components/BarChart';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import type { OpenPackageRow } from '@/services/dashboardService';
 
+const RECENT_VISITS_LIMIT = 8;
+
 // Reference categorical palette — all 8 validated slots in fixed order,
 // assigned by index and never cycled (a 9th series would repeat hues and
 // break CVD separation; fold into "Other" before that ever happens).
@@ -40,6 +42,10 @@ export function DashboardPage() {
     () => dashboardService.recurringPatients(clinic.id),
     [clinic.id]
   );
+  const recentVisits = useLiveQuery(
+    () => dashboardService.recentVisits(clinic.id, RECENT_VISITS_LIMIT),
+    [clinic.id]
+  );
 
   const categories = useMemo(
     () => (trend ?? []).map((r) => `${monthName(r.month.month).slice(0, 3)} '${String(r.month.year).slice(2)}`),
@@ -67,7 +73,51 @@ export function DashboardPage() {
     <div className="space-y-6">
       <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Dashboard</h1>
 
-      <SectionCard title="Patients who didn't come back">
+      <SectionCard title="Recent visits">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
+            <thead>
+              <tr>
+                <th className={th}>Date</th>
+                <th className={th}>Patient</th>
+                <th className={th}>Therapist</th>
+                <th className={th}>Service</th>
+                <th className={th}>Treatment</th>
+                <th className={thNum}>Bill</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {(recentVisits ?? []).map((v) => (
+                <tr key={v.visitId} className="hover:bg-[var(--paper)]">
+                  <td className={td}>{v.visitDate}</td>
+                  <td className={td}>
+                    <span className="font-display">{v.patientName}</span>{' '}
+                    <span className="text-xs text-[var(--muted)]">{v.mrno}</span>
+                  </td>
+                  <td className={td}>{v.therapistName}</td>
+                  <td className={td}>{v.serviceName}</td>
+                  <td className={td}>{v.treatmentNotes ?? '—'}</td>
+                  <td className={tdNum}>{formatINR(v.billPaise)}</td>
+                </tr>
+              ))}
+              {recentVisits?.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
+                    No visits logged yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-3 text-right">
+          <Link to="/visits" className="text-sm font-medium text-[var(--teal)] hover:underline">
+            View all visits →
+          </Link>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Single-visit patients">
         <p className="mb-3 text-xs text-[var(--muted)]">
           Exactly one visit on record, more than 14 days ago — worth a call to find out why, or a
           reminder to book again.

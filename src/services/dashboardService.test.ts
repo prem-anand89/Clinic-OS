@@ -279,6 +279,12 @@ describe('dashboardService.recentVisits', () => {
     const svc = createDashboardService(fake.repos);
     expect((await svc.recentVisits('clinic-1'))[0].hasInvoice).toBe(true);
   });
+
+  it('carries treatment notes through', async () => {
+    fake.visits.set('v1', baseVisit('v1', { visitDate: '2026-06-01', treatmentNotes: 'Ultrasound + stretch' }));
+    const svc = createDashboardService(fake.repos);
+    expect((await svc.recentVisits('clinic-1'))[0].treatmentNotes).toBe('Ultrasound + stretch');
+  });
 });
 
 describe('dashboardService.singleVisitPatients', () => {
@@ -341,5 +347,69 @@ describe('dashboardService.recurringPatients', () => {
     }
     const svc = createDashboardService(fake.repos);
     expect(await svc.recurringPatients('clinic-1')).toEqual([]);
+  });
+});
+
+describe('dashboardService.weeklySummary', () => {
+  let fake: ReturnType<typeof makeFakeRepos>;
+  beforeEach(() => {
+    fake = makeFakeRepos();
+  });
+
+  it('counts visits and bill total within the rolling window', async () => {
+    const today = new Date();
+    fake.visits.set('v1', baseVisit('v1', { visitDate: today.toISOString().slice(0, 10), actualBillPaise: rs(1000) }));
+    const twoWeeksAgo = new Date(today);
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    fake.visits.set('v2', baseVisit('v2', { visitDate: twoWeeksAgo.toISOString().slice(0, 10), actualBillPaise: rs(2000) }));
+    const svc = createDashboardService(fake.repos);
+    const summary = await svc.weeklySummary('clinic-1');
+    expect(summary).toEqual({ visitCount: 1, billedPaise: rs(1000) });
+  });
+});
+
+describe('dashboardService.monthlyNewCounts', () => {
+  let fake: ReturnType<typeof makeFakeRepos>;
+  beforeEach(() => {
+    fake = makeFakeRepos();
+  });
+
+  it('counts a package as new when its first session is this month', async () => {
+    fake.visits.set(
+      'v1',
+      baseVisit('v1', { visitDate: '2026-06-05', packageGroupId: 'g1', packageTotal: 3 })
+    );
+    const svc = createDashboardService(fake.repos);
+    const counts = await svc.monthlyNewCounts('clinic-1', new Date('2026-06-15'));
+    expect(counts.newPackages).toBe(1);
+  });
+
+  it('does not count a package whose first session was an earlier month', async () => {
+    fake.visits.set(
+      'v1',
+      baseVisit('v1', { visitDate: '2026-05-05', packageGroupId: 'g1', packageTotal: 3 })
+    );
+    fake.visits.set(
+      'v2',
+      baseVisit('v2', { visitDate: '2026-06-05', packageGroupId: 'g1', packageTotal: 3 })
+    );
+    const svc = createDashboardService(fake.repos);
+    const counts = await svc.monthlyNewCounts('clinic-1', new Date('2026-06-15'));
+    expect(counts.newPackages).toBe(0);
+  });
+
+  it('counts a patient as new when their first-ever visit is this month', async () => {
+    fake.visits.set('v1', baseVisit('v1', { visitDate: '2026-06-05' }));
+    const svc = createDashboardService(fake.repos);
+    const counts = await svc.monthlyNewCounts('clinic-1', new Date('2026-06-15'));
+    expect(counts.newPatients).toBe(1);
+  });
+
+  it('does not count a returning patient whose first visit was an earlier month', async () => {
+    fake.visits.set('v1', baseVisit('v1', { visitDate: '2026-05-20' }));
+    fake.visits.set('v2', baseVisit('v2', { visitDate: '2026-06-05' }));
+    const svc = createDashboardService(fake.repos);
+    const counts = await svc.monthlyNewCounts('clinic-1', new Date('2026-06-15'));
+    expect(counts.newPatients).toBe(0);
   });
 });
