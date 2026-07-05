@@ -8,7 +8,7 @@ export const btnPrimary =
 export const btnSecondary =
   'rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50';
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, children }: { label: ReactNode; children: ReactNode }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-slate-600">{label}</span>
@@ -83,6 +83,20 @@ export function Pill({ tone, children }: { tone: keyof typeof PILL_TONES; childr
   return (
     <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${PILL_TONES[tone]}`}>
       {children}
+    </span>
+  );
+}
+
+/** Small "?" affordance explaining a jargon term inline, via native tooltip. */
+export function InfoTip({ text }: { text: string }) {
+  return (
+    <span
+      tabIndex={0}
+      title={text}
+      aria-label={text}
+      className="ml-1 inline-flex h-3.5 w-3.5 shrink-0 cursor-help select-none items-center justify-center rounded-full bg-slate-200 align-middle text-[10px] font-semibold leading-none text-slate-500 hover:bg-slate-300"
+    >
+      ?
     </span>
   );
 }

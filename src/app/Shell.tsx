@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
@@ -49,7 +49,13 @@ export function Shell() {
   // The recovery link's own auth flow doesn't need session/clinic gating —
   // it may be opened by someone whose local session has expired, and it
   // must render before those checks would otherwise redirect to login.
-  if (pathname === '/reset-password') return <Outlet />;
+  if (pathname === '/reset-password') {
+    return (
+      <Suspense fallback={<Centered>Loading…</Centered>}>
+        <Outlet />
+      </Suspense>
+    );
+  }
 
   if (loading) return <Centered>Loading…</Centered>;
   if (!session) return <LoginPage />;
@@ -62,18 +68,27 @@ export function Shell() {
       <Centered>
         <div className="max-w-md space-y-3 text-center text-sm text-slate-600">
           <p className="text-base font-medium text-slate-800">
-            {syncKicked ? 'Fetching your clinic…' : 'Preparing…'}
+            {syncKicked ? "You're signed in, but not on a clinic yet" : 'Preparing…'}
           </p>
-          <p>
-            If this is a fresh setup, make sure the migrations + seed ran and your user was added
-            to the clinic (see <code>supabase/setup_members.sql</code>), then sync again.
-          </p>
+          {syncKicked && (
+            <p>Ask your clinic admin to add your login, then come back and retry.</p>
+          )}
           <button className={btnSecondary} onClick={() => syncEngine.schedule(0)}>
             Retry sync
           </button>
           <button className={btnSecondary} onClick={() => getSupabase()?.auth.signOut()}>
             Sign out
           </button>
+          {syncKicked && (
+            <details className="pt-2 text-left text-xs text-slate-400">
+              <summary className="cursor-pointer select-none text-center">Technical details</summary>
+              <p className="mt-2">
+                A membership row links your Supabase auth user to a clinic in{' '}
+                <code>clinic_members</code>. See <code>supabase/provision_clinic.sql</code> (new
+                clinic) or add a row manually, then retry sync.
+              </p>
+            </details>
+          )}
         </div>
       </Centered>
     );
@@ -83,7 +98,9 @@ export function Shell() {
   if (pathname.endsWith('/print')) {
     return (
       <ClinicContext.Provider value={clinic}>
-        <Outlet />
+        <Suspense fallback={<Centered>Loading…</Centered>}>
+          <Outlet />
+        </Suspense>
       </ClinicContext.Provider>
     );
   }
@@ -154,7 +171,9 @@ export function Shell() {
           )}
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6">
-          <Outlet />
+          <Suspense fallback={<div className="py-16 text-center text-sm text-slate-400">Loading…</div>}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </ClinicContext.Provider>

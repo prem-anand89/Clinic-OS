@@ -1,3 +1,4 @@
+import { lazy } from 'react';
 import {
   createRootRoute,
   createRoute,
@@ -6,16 +7,43 @@ import {
 } from '@tanstack/react-router';
 import { Shell } from './Shell';
 import { VisitsPage } from '@/features/visits/VisitsPage';
-import { NewVisitPage } from '@/features/visits/NewVisitPage';
-import { PatientsPage } from '@/features/patients/PatientsPage';
-import { ReportsPage } from '@/features/reports/ReportsPage';
-import { MonthlyLedgerPrintPage } from '@/features/reports/MonthlyLedgerPrintPage';
-import { InvoicesPage } from '@/features/invoices/InvoicesPage';
-import { InvoicePrintPage } from '@/features/invoices/InvoicePrintPage';
-import { SetupPage } from '@/features/setup/SetupPage';
-import { ImportVisitsPage } from '@/features/import/ImportVisitsPage';
-import { DashboardPage } from '@/features/dashboard/DashboardPage';
-import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
+
+// Code-split every route except the default post-login landing page
+// (Visits) — that one stays eager so the most common path pays no extra
+// chunk fetch. Everything else (reports, dashboard charts, print pages,
+// the Excel import UI, setup) only loads when actually visited.
+const NewVisitPage = lazy(() =>
+  import('@/features/visits/NewVisitPage').then((m) => ({ default: m.NewVisitPage }))
+);
+const PatientsPage = lazy(() =>
+  import('@/features/patients/PatientsPage').then((m) => ({ default: m.PatientsPage }))
+);
+const ReportsPage = lazy(() =>
+  import('@/features/reports/ReportsPage').then((m) => ({ default: m.ReportsPage }))
+);
+const MonthlyLedgerPrintPage = lazy(() =>
+  import('@/features/reports/MonthlyLedgerPrintPage').then((m) => ({
+    default: m.MonthlyLedgerPrintPage,
+  }))
+);
+const InvoicesPage = lazy(() =>
+  import('@/features/invoices/InvoicesPage').then((m) => ({ default: m.InvoicesPage }))
+);
+const InvoicePrintPage = lazy(() =>
+  import('@/features/invoices/InvoicePrintPage').then((m) => ({ default: m.InvoicePrintPage }))
+);
+const SetupPage = lazy(() =>
+  import('@/features/setup/SetupPage').then((m) => ({ default: m.SetupPage }))
+);
+const ImportVisitsPage = lazy(() =>
+  import('@/features/import/ImportVisitsPage').then((m) => ({ default: m.ImportVisitsPage }))
+);
+const DashboardPage = lazy(() =>
+  import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage }))
+);
+const ResetPasswordPage = lazy(() =>
+  import('@/features/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage }))
+);
 
 const rootRoute = createRootRoute({ component: Shell });
 

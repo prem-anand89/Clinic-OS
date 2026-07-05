@@ -20,6 +20,7 @@ import {
   thNum,
   td,
   tdNum,
+  InfoTip,
 } from '@/components/ui';
 import { toFriendlyMessage } from '@/lib/errors';
 
@@ -224,7 +225,14 @@ function ClinicProfile() {
             onChange={(e) => set({ bmSplitPct: Number(e.target.value) })}
           />
         </Field>
-        <Field label="Tax / TDS %">
+        <Field
+          label={
+            <>
+              Tax / TDS %
+              <InfoTip text="Tax Deducted at Source — the % withheld before payout to the partner hospital or to the clinic, depending on TDS basis below." />
+            </>
+          }
+        >
           <input
             type="number"
             className={inputCls}
@@ -232,7 +240,14 @@ function ClinicProfile() {
             onChange={(e) => set({ taxPct: Number(e.target.value) })}
           />
         </Field>
-        <Field label="TDS basis">
+        <Field
+          label={
+            <>
+              TDS basis
+              <InfoTip text="Whether the tax % is calculated on the full bill (matches most hospital sheets) or only on the clinic's own share. Both produce the same final clinic payout." />
+            </>
+          }
+        >
           <select
             className={inputCls}
             value={form.tdsBasis}

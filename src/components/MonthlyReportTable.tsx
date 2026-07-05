@@ -1,5 +1,5 @@
 import { formatINR } from '@/domain/money';
-import { th, thNum, td, tdNum } from './ui';
+import { th, thNum, td, tdNum, InfoTip } from './ui';
 import type { MonthlyReport, TherapistMonthRow } from '@/services/reportService';
 
 /**
@@ -39,12 +39,34 @@ export function MonthlyReportTable({
         <tr>
           <th className={th}>Therapist</th>
           <th className={thNum}>Bill Amount</th>
-          <th className={thNum}>{own} Share</th>
-          <th className={thNum}>TDS Deducted</th>
-          <th className={thNum}>Post Tax {own}</th>
-          <th className={thNum}>{partner} Share</th>
-          {showShared && <th className={thNum}>Shared</th>}
-          {showShared && <th className={thNum}>Net</th>}
+          <th className={thNum}>
+            {own} Share
+            {showShared && <InfoTip text={`The clinic's own cut of the bill, before tax (${own} split % from Setup).`} />}
+          </th>
+          <th className={thNum}>
+            TDS Deducted
+            {showShared && <InfoTip text="Tax Deducted at Source — withheld before payout, per the clinic's TDS basis." />}
+          </th>
+          <th className={thNum}>
+            Post Tax {own}
+            {showShared && <InfoTip text={`${own} Share after TDS — what the clinic actually keeps from this bill.`} />}
+          </th>
+          <th className={thNum}>
+            {partner} Share
+            {showShared && <InfoTip text={`The remainder of the bill after ${own}'s cut — what goes to ${partner}.`} />}
+          </th>
+          {showShared && (
+            <th className={thNum}>
+              Shared
+              <InfoTip text="Money moved between therapists on split visits — negative for who gave it up, positive for who received it. Always nets to zero." />
+            </th>
+          )}
+          {showShared && (
+            <th className={thNum}>
+              Net
+              <InfoTip text={`Post Tax ${own}, adjusted for that therapist's splits — their real take-home figure.`} />
+            </th>
+          )}
           <th className={thNum}>Visits</th>
           <th className={thNum}>Patients</th>
         </tr>
