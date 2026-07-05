@@ -34,6 +34,17 @@ export interface OutstandingSummary {
   count: number;
 }
 
+export interface RecentVisitRow {
+  visitId: UUID;
+  visitDate: string;
+  patientName: string;
+  mrno: string;
+  therapistName: string;
+  serviceName: string;
+  billPaise: Paise;
+  hasInvoice: boolean;
+}
+
 /** Rolling window ending at (and including) the current calendar month. */
 function lastNMonths(n: number, from = new Date()): FyMonth[] {
   const months: FyMonth[] = [];
@@ -116,6 +127,33 @@ export function createDashboardService(repos: Repos) {
         totalPaise: rows.reduce((sum, r) => sum + r.totalPaise, 0),
         count: rows.length,
       };
+    },
+
+    /** Most recent visits first, for an at-a-glance strip — not filtered by date. */
+    async recentVisits(clinicId: UUID, limit = 8): Promise<RecentVisitRow[]> {
+      const [visits, patients, therapists, catalog] = await Promise.all([
+        repos.visits.list({ clinicId }),
+        repos.patients.list(clinicId),
+        repos.therapists.list(clinicId, true),
+        repos.catalog.list(clinicId, true),
+      ]);
+      const patientById = new Map(patients.map((p) => [p.id, p]));
+      const therapistNameById = new Map(therapists.map((t) => [t.id, t.name]));
+      const serviceNameById = new Map(catalog.map((c) => [c.id, c.name]));
+
+      return [...visits]
+        .sort((a, b) => b.visitDate.localeCompare(a.visitDate))
+        .slice(0, limit)
+        .map((v) => ({
+          visitId: v.id,
+          visitDate: v.visitDate,
+          patientName: patientById.get(v.patientId)?.name ?? 'Unknown',
+          mrno: patientById.get(v.patientId)?.mrno ?? '—',
+          therapistName: therapistNameById.get(v.therapistId) ?? '—',
+          serviceName: serviceNameById.get(v.serviceCatalogId) ?? '—',
+          billPaise: v.actualBillPaise,
+          hasInvoice: Boolean(v.invoiceId),
+        }));
     },
   };
 }

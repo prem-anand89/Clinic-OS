@@ -243,3 +243,39 @@ describe('dashboardService.outstandingInvoices', () => {
     expect(summary.totalPaise).toBe(rs(1500));
   });
 });
+
+describe('dashboardService.recentVisits', () => {
+  let fake: ReturnType<typeof makeFakeRepos>;
+  beforeEach(() => {
+    fake = makeFakeRepos();
+  });
+
+  it('returns most recent visits first, with names attached', async () => {
+    fake.visits.set('v1', baseVisit('v1', { visitDate: '2026-06-01' }));
+    fake.visits.set('v2', baseVisit('v2', { visitDate: '2026-06-10' }));
+    const svc = createDashboardService(fake.repos);
+    const rows = await svc.recentVisits('clinic-1');
+    expect(rows.map((r) => r.visitId)).toEqual(['v2', 'v1']);
+    expect(rows[0]).toMatchObject({
+      patientName: 'Test Patient',
+      mrno: '1001',
+      therapistName: 'Prem',
+      serviceName: 'Manual Therapy',
+      hasInvoice: false,
+    });
+  });
+
+  it('respects the limit', async () => {
+    for (let i = 0; i < 5; i++) {
+      fake.visits.set(`v${i}`, baseVisit(`v${i}`, { visitDate: `2026-06-0${i + 1}` }));
+    }
+    const svc = createDashboardService(fake.repos);
+    expect(await svc.recentVisits('clinic-1', 3)).toHaveLength(3);
+  });
+
+  it('flags invoiced visits', async () => {
+    fake.visits.set('v1', baseVisit('v1', { visitDate: '2026-06-01', invoiceId: 'inv-1' }));
+    const svc = createDashboardService(fake.repos);
+    expect((await svc.recentVisits('clinic-1'))[0].hasInvoice).toBe(true);
+  });
+});

@@ -82,7 +82,7 @@ export function InvoicesPage() {
                     <Link
                       to="/invoices/$invoiceId/print"
                       params={{ invoiceId: inv.id }}
-                      className="text-[var(--teal)] hover:underline"
+                      className="font-medium text-[var(--teal)] hover:underline"
                     >
                       Print
                     </Link>

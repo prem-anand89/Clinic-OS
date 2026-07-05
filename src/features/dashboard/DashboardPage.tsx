@@ -11,6 +11,8 @@ import { BarChart } from '@/components/BarChart';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import type { OpenPackageRow } from '@/services/dashboardService';
 
+const RECENT_VISITS_LIMIT = 8;
+
 // Reference categorical palette — all 8 validated slots in fixed order,
 // assigned by index and never cycled (a 9th series would repeat hues and
 // break CVD separation; fold into "Other" before that ever happens).
@@ -32,6 +34,10 @@ export function DashboardPage() {
   const trend = useLiveQuery(() => dashboardService.revenueTrend(clinic.id), [clinic.id]);
   const openPackages = useLiveQuery(() => dashboardService.openPackages(clinic.id), [clinic.id]);
   const outstanding = useLiveQuery(() => dashboardService.outstandingInvoices(clinic.id), [clinic.id]);
+  const recentVisits = useLiveQuery(
+    () => dashboardService.recentVisits(clinic.id, RECENT_VISITS_LIMIT),
+    [clinic.id]
+  );
 
   const categories = useMemo(
     () => (trend ?? []).map((r) => `${monthName(r.month.month).slice(0, 3)} '${String(r.month.year).slice(2)}`),
@@ -59,67 +65,56 @@ export function DashboardPage() {
     <div className="space-y-6">
       <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Dashboard</h1>
 
-      <SectionCard title={`Revenue trend — last 6 months (Post-Tax ${labels.own})`}>
-        {trend && (
-          <BarChart
-            categories={categories}
-            series={[
-              {
-                label: `Post-Tax ${labels.own}`,
-                color: SERIES_COLORS[0],
-                values: trend.map((r) => r.total.postTaxPaise),
-              },
-            ]}
-            formatValue={formatINR}
-          />
-        )}
-        <div className="mt-4 overflow-x-auto">
+      <SectionCard title="Recent visits">
+        <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-[var(--border)] text-sm">
             <thead>
               <tr>
-                <th className={th}>Month</th>
+                <th className={th}>Date</th>
+                <th className={th}>Patient</th>
+                <th className={th}>Therapist</th>
+                <th className={th}>Service</th>
                 <th className={thNum}>Bill</th>
-                <th className={thNum}>{labels.own} Share</th>
-                <th className={thNum}>TDS</th>
-                <th className={thNum}>Post Tax</th>
-                <th className={thNum}>{labels.partner}</th>
-                <th className={thNum}>Visits</th>
-                <th className={thNum}>Patients</th>
+                <th className={th}>Invoice</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
-              {(trend ?? []).map((r, i) => (
-                <tr key={i} className="hover:bg-[var(--paper)]">
-                  <td className={td}>{categories[i]}</td>
-                  <td className={tdNum}>{formatINR(r.total.billPaise)}</td>
-                  <td className={tdNum}>{formatINR(r.total.bmSharePaise)}</td>
-                  <td className={tdNum}>{formatINR(r.total.tdsPaise)}</td>
-                  <td className={tdNum}>{formatINR(r.total.postTaxPaise)}</td>
-                  <td className={tdNum}>{formatINR(r.total.hvPaise)}</td>
-                  <td className={tdNum}>{r.total.visitCount}</td>
-                  <td className={tdNum}>{r.total.uniquePatients}</td>
+              {(recentVisits ?? []).map((v) => (
+                <tr key={v.visitId} className="hover:bg-[var(--paper)]">
+                  <td className={td}>{v.visitDate}</td>
+                  <td className={td}>
+                    <span className="font-display">{v.patientName}</span>{' '}
+                    <span className="text-xs text-[var(--muted)]">{v.mrno}</span>
+                  </td>
+                  <td className={td}>{v.therapistName}</td>
+                  <td className={td}>{v.serviceName}</td>
+                  <td className={tdNum}>{formatINR(v.billPaise)}</td>
+                  <td className={td}>
+                    {v.hasInvoice ? (
+                      <Pill tone="green">Invoiced</Pill>
+                    ) : v.billPaise > 0 ? (
+                      <Pill tone="amber">Not invoiced</Pill>
+                    ) : (
+                      <span className="text-xs text-[var(--muted)]">₹0 session</span>
+                    )}
+                  </td>
                 </tr>
               ))}
+              {recentVisits?.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
+                    No visits logged yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-      </SectionCard>
-
-      <SectionCard title={`Therapist comparison — Post-Tax ${labels.own}`}>
-        {trend && therapistNames.length > 0 && (
-          <BarChart
-            categories={categories}
-            series={therapistNames.slice(0, SERIES_COLORS.length).map((name, i) => ({
-              label: name,
-              color: SERIES_COLORS[i],
-              values: trend.map((r) => r.rows.find((row) => row.therapistName === name)?.postTaxPaise ?? 0),
-            }))}
-            formatValue={formatINR}
-          />
-        )}
-        {trend && therapistNames.length === 0 && (
-          <p className="text-sm text-[var(--muted)]">No visits in the last 6 months.</p>
-        )}
+        <div className="mt-3 text-right">
+          <Link to="/visits" className="text-sm font-medium text-[var(--teal)] hover:underline">
+            View all visits →
+          </Link>
+        </div>
       </SectionCard>
 
       <SectionCard title="Open packages">
@@ -214,6 +209,69 @@ export function DashboardPage() {
             </tbody>
           </table>
         </div>
+      </SectionCard>
+
+      <SectionCard title={`Revenue trend — last 6 months (Post-Tax ${labels.own})`}>
+        {trend && (
+          <BarChart
+            categories={categories}
+            series={[
+              {
+                label: `Post-Tax ${labels.own}`,
+                color: SERIES_COLORS[0],
+                values: trend.map((r) => r.total.postTaxPaise),
+              },
+            ]}
+            formatValue={formatINR}
+          />
+        )}
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
+            <thead>
+              <tr>
+                <th className={th}>Month</th>
+                <th className={thNum}>Bill</th>
+                <th className={thNum}>{labels.own} Share</th>
+                <th className={thNum}>TDS</th>
+                <th className={thNum}>Post Tax</th>
+                <th className={thNum}>{labels.partner}</th>
+                <th className={thNum}>Visits</th>
+                <th className={thNum}>Patients</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {(trend ?? []).map((r, i) => (
+                <tr key={i} className="hover:bg-[var(--paper)]">
+                  <td className={td}>{categories[i]}</td>
+                  <td className={tdNum}>{formatINR(r.total.billPaise)}</td>
+                  <td className={tdNum}>{formatINR(r.total.bmSharePaise)}</td>
+                  <td className={tdNum}>{formatINR(r.total.tdsPaise)}</td>
+                  <td className={tdNum}>{formatINR(r.total.postTaxPaise)}</td>
+                  <td className={tdNum}>{formatINR(r.total.hvPaise)}</td>
+                  <td className={tdNum}>{r.total.visitCount}</td>
+                  <td className={tdNum}>{r.total.uniquePatients}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+
+      <SectionCard title={`Therapist comparison — Post-Tax ${labels.own}`}>
+        {trend && therapistNames.length > 0 && (
+          <BarChart
+            categories={categories}
+            series={therapistNames.slice(0, SERIES_COLORS.length).map((name, i) => ({
+              label: name,
+              color: SERIES_COLORS[i],
+              values: trend.map((r) => r.rows.find((row) => row.therapistName === name)?.postTaxPaise ?? 0),
+            }))}
+            formatValue={formatINR}
+          />
+        )}
+        {trend && therapistNames.length === 0 && (
+          <p className="text-sm text-[var(--muted)]">No visits in the last 6 months.</p>
+        )}
       </SectionCard>
     </div>
   );

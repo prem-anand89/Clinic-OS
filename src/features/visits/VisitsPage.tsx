@@ -5,7 +5,7 @@ import { repos, invoiceService, paymentService, visitService } from '@/services'
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import { clinicShareLabels, type PaymentMode, type Therapist, type Visit } from '@/domain/types';
-import { btnPrimary, btnSecondary, inputCls, th, thNum, td, tdNum, ErrorNote, Field } from '@/components/ui';
+import { btnPrimary, btnSecondary, inputCls, th, thNum, td, tdNum, ErrorNote, Field, StatTile } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import { toFriendlyMessage } from '@/lib/errors';
 
@@ -50,6 +50,17 @@ export function VisitsPage() {
   const serviceName = useMemo(() => new Map((catalog ?? []).map((c) => [c.id, c.name])), [catalog]);
 
   const filteredPatient = search.patientId ? patientById.get(search.patientId) : undefined;
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayVisits = useMemo(() => (visits ?? []).filter((v) => v.visitDate === todayStr), [visits, todayStr]);
+  const todayBillPaise = useMemo(
+    () => todayVisits.reduce((sum, v) => sum + v.actualBillPaise, 0),
+    [todayVisits]
+  );
+  const pendingInvoiceCount = useMemo(
+    () => (visits ?? []).filter((v) => !v.invoiceId && v.actualBillPaise > 0).length,
+    [visits]
+  );
 
   const sort = useSort<'date' | 'patient' | 'therapist' | 'bill' | 'bmShare' | 'postTax'>('date', 'desc');
   const sortedVisits = applySort(
@@ -123,6 +134,12 @@ export function VisitsPage() {
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-3">
+        <StatTile label="Today's visits" value={todayVisits.length} />
+        <StatTile label="Today's billed" value={formatINR(todayBillPaise)} />
+        <StatTile label="Pending invoices" value={pendingInvoiceCount} />
+      </div>
+
       <div className="overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
         <table className="min-w-full divide-y divide-[var(--border)]">
           <thead className="bg-[var(--paper)]">
@@ -152,7 +169,7 @@ export function VisitsPage() {
                   <td className={td}>
                     {therapistName.get(v.therapistId) ?? '—'}
                     {v.sharedTherapistId && (
-                      <div className="text-xs text-[var(--moss)]" title="Internal revenue split">
+                      <div className="text-sm font-medium text-[var(--moss)]" title="Internal revenue split">
                         ⇄ {therapistName.get(v.sharedTherapistId) ?? '—'} {v.sharedPct}%
                       </div>
                     )}
@@ -176,13 +193,13 @@ export function VisitsPage() {
                       <Link
                         to="/invoices/$invoiceId/print"
                         params={{ invoiceId: v.invoiceId }}
-                        className="text-[var(--teal)] hover:underline"
+                        className="font-medium text-[var(--teal)] hover:underline"
                       >
                         View
                       </Link>
                     ) : v.actualBillPaise > 0 ? (
                       <button
-                        className="text-[var(--teal)] hover:underline"
+                        className="font-medium text-[var(--teal)] hover:underline"
                         onClick={() => {
                           setError(null);
                           setPaidNow(true);

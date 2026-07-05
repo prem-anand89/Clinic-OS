@@ -135,7 +135,7 @@ export function PatientsPage() {
                   <Link
                     to="/visits"
                     search={{ patientId: p.id }}
-                    className="text-[var(--teal)] hover:underline"
+                    className="font-medium text-[var(--teal)] hover:underline"
                   >
                     Visit history
                   </Link>

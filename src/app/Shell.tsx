@@ -110,7 +110,7 @@ export function Shell() {
       <div className="min-h-screen bg-[var(--paper)]">
         <header className="no-print sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface)]">
           <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
-            <div className="font-display truncate text-sm font-semibold text-[var(--ink)]">{clinic.name}</div>
+            <div className="font-display truncate text-lg font-semibold text-[var(--ink)]">{clinic.name}</div>
             {/* Desktop nav */}
             <nav className="hidden gap-1 sm:flex">
               {NAV.map((item) => (
