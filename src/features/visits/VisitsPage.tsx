@@ -1,15 +1,30 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { repos, invoiceService, paymentService, visitService } from '@/services';
+import { repos, dashboardService, invoiceService, paymentService, visitService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import { clinicShareLabels, type PaymentMode, type Therapist, type Visit } from '@/domain/types';
-import { btnPrimary, btnSecondary, inputCls, th, thNum, td, tdNum, ErrorNote, Field, StatTile } from '@/components/ui';
+import {
+  btnPrimary,
+  btnSecondary,
+  inputCls,
+  th,
+  thNum,
+  td,
+  tdNum,
+  ErrorNote,
+  Field,
+  Pill,
+  SectionCard,
+  StatTile,
+} from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import { toFriendlyMessage } from '@/lib/errors';
 
 const PAYMENT_MODES: PaymentMode[] = ['Cash', 'Card', 'UPI', 'Insurance'];
+const RECENT_VISITS_LIMIT = 8;
+const PATIENT_SEARCH_LIMIT = 6;
 
 export function VisitsPage() {
   const clinic = useClinic();
@@ -20,6 +35,7 @@ export function VisitsPage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [therapistId, setTherapistId] = useState('');
+  const [patientQuery, setPatientQuery] = useState('');
   const [invoicing, setInvoicing] = useState<Visit | null>(null);
   const [splitting, setSplitting] = useState<Visit | null>(null);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('Cash');
@@ -50,6 +66,21 @@ export function VisitsPage() {
   const serviceName = useMemo(() => new Map((catalog ?? []).map((c) => [c.id, c.name])), [catalog]);
 
   const filteredPatient = search.patientId ? patientById.get(search.patientId) : undefined;
+
+  const patientMatches = useMemo(() => {
+    const q = patientQuery.trim().toLowerCase();
+    if (!q) return [];
+    return (patients ?? [])
+      .filter((p) => !p.deletedAt && (p.mrno.toLowerCase().startsWith(q) || p.name.toLowerCase().includes(q)))
+      .slice(0, PATIENT_SEARCH_LIMIT);
+  }, [patients, patientQuery]);
+
+  const recentVisits = useLiveQuery(
+    () => dashboardService.recentVisits(clinic.id, RECENT_VISITS_LIMIT),
+    [clinic.id]
+  );
+  const openPackages = useLiveQuery(() => dashboardService.openPackages(clinic.id), [clinic.id]);
+  const followUps = useMemo(() => (openPackages ?? []).filter((p) => p.stale), [openPackages]);
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayVisits = useMemo(() => (visits ?? []).filter((v) => v.visitDate === todayStr), [visits, todayStr]);
@@ -112,6 +143,36 @@ export function VisitsPage() {
           </span>
         )}
         <div className="ml-auto flex flex-wrap items-end gap-2">
+          <div className="relative">
+            <Field label="Find patient">
+              <input
+                className={inputCls}
+                placeholder="Name or MRNO…"
+                value={patientQuery}
+                onChange={(e) => setPatientQuery(e.target.value)}
+                onBlur={() => setTimeout(() => setPatientQuery(''), 150)}
+              />
+            </Field>
+            {patientMatches.length > 0 && (
+              <div className="absolute z-10 mt-1 w-64 rounded-md border border-[var(--border)] bg-[var(--surface)]">
+                {patientMatches.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--paper)]"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setPatientQuery('');
+                      void navigate({ to: '/visits', search: { patientId: p.id } });
+                    }}
+                  >
+                    <span className="font-display">{p.name}</span>{' '}
+                    <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <Field label="From">
             <input type="date" className={inputCls} value={from} onChange={(e) => setFrom(e.target.value)} />
           </Field>
@@ -139,6 +200,100 @@ export function VisitsPage() {
         <StatTile label="Today's billed" value={formatINR(todayBillPaise)} />
         <StatTile label="Pending invoices" value={pendingInvoiceCount} />
       </div>
+
+      {followUps.length > 0 && (
+        <SectionCard title="Due for follow-up">
+          <p className="mb-3 text-xs text-[var(--muted)]">
+            Mid-package and not seen in over 14 days — your actionable retention list.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-[var(--border)] text-sm">
+              <thead>
+                <tr>
+                  <th className={th}>Patient</th>
+                  <th className={th}>Service</th>
+                  <th className={thNum}>Progress</th>
+                  <th className={th}>Last visit</th>
+                  <th className={thNum}>Days since</th>
+                  <th className={th}></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)]">
+                {followUps.map((p) => (
+                  <tr key={p.packageGroupId} className="hover:bg-[var(--paper)]">
+                    <td className={td}>
+                      <span className="font-display">{p.patientName}</span>{' '}
+                      <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
+                    </td>
+                    <td className={td}>{p.serviceName}</td>
+                    <td className={tdNum}>
+                      {p.sessionsLogged} of {p.packageTotal}
+                    </td>
+                    <td className={td}>{p.lastVisitOn}</td>
+                    <td className={tdNum}>{p.daysSinceLastVisit}</td>
+                    <td className={td}>
+                      <Link
+                        to="/visits"
+                        search={{ patientId: p.patientId }}
+                        className="font-medium text-[var(--teal)] hover:underline"
+                      >
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+      )}
+
+      <SectionCard title="Recent visits">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
+            <thead>
+              <tr>
+                <th className={th}>Date</th>
+                <th className={th}>Patient</th>
+                <th className={th}>Therapist</th>
+                <th className={th}>Service</th>
+                <th className={thNum}>Bill</th>
+                <th className={th}>Invoice</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {(recentVisits ?? []).map((v) => (
+                <tr key={v.visitId} className="hover:bg-[var(--paper)]">
+                  <td className={td}>{v.visitDate}</td>
+                  <td className={td}>
+                    <span className="font-display">{v.patientName}</span>{' '}
+                    <span className="text-xs text-[var(--muted)]">{v.mrno}</span>
+                  </td>
+                  <td className={td}>{v.therapistName}</td>
+                  <td className={td}>{v.serviceName}</td>
+                  <td className={tdNum}>{formatINR(v.billPaise)}</td>
+                  <td className={td}>
+                    {v.hasInvoice ? (
+                      <Pill tone="green">Invoiced</Pill>
+                    ) : v.billPaise > 0 ? (
+                      <Pill tone="amber">Not invoiced</Pill>
+                    ) : (
+                      <span className="text-xs text-[var(--muted)]">₹0 session</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {recentVisits?.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
+                    No visits logged yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
 
       <div className="overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
         <table className="min-w-full divide-y divide-[var(--border)]">

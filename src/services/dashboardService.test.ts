@@ -177,6 +177,7 @@ describe('dashboardService.openPackages', () => {
     const rows = await svc.openPackages('clinic-1');
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
+      patientId: 'pat-1',
       patientName: 'Test Patient',
       mrno: '1001',
       serviceName: 'Manual Therapy',
@@ -277,5 +278,68 @@ describe('dashboardService.recentVisits', () => {
     fake.visits.set('v1', baseVisit('v1', { visitDate: '2026-06-01', invoiceId: 'inv-1' }));
     const svc = createDashboardService(fake.repos);
     expect((await svc.recentVisits('clinic-1'))[0].hasInvoice).toBe(true);
+  });
+});
+
+describe('dashboardService.singleVisitPatients', () => {
+  let fake: ReturnType<typeof makeFakeRepos>;
+  beforeEach(() => {
+    fake = makeFakeRepos();
+  });
+
+  it('flags a patient with exactly one old visit', async () => {
+    fake.visits.set('v1', baseVisit('v1', { visitDate: '2020-01-01' }));
+    const svc = createDashboardService(fake.repos);
+    const rows = await svc.singleVisitPatients('clinic-1');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ patientName: 'Test Patient', mrno: '1001', serviceName: 'Manual Therapy' });
+  });
+
+  it('excludes a single visit still inside the grace window', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    fake.visits.set('v1', baseVisit('v1', { visitDate: today }));
+    const svc = createDashboardService(fake.repos);
+    expect(await svc.singleVisitPatients('clinic-1')).toEqual([]);
+  });
+
+  it('excludes a patient with more than one visit', async () => {
+    fake.visits.set('v1', baseVisit('v1', { visitDate: '2020-01-01' }));
+    fake.visits.set('v2', baseVisit('v2', { visitDate: '2020-02-01' }));
+    const svc = createDashboardService(fake.repos);
+    expect(await svc.singleVisitPatients('clinic-1')).toEqual([]);
+  });
+});
+
+describe('dashboardService.recurringPatients', () => {
+  let fake: ReturnType<typeof makeFakeRepos>;
+  beforeEach(() => {
+    fake = makeFakeRepos();
+  });
+
+  it('surfaces a patient with 3+ visits in the last 30 days', async () => {
+    const today = new Date();
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i * 5);
+      fake.visits.set(`v${i}`, baseVisit(`v${i}`, { visitDate: d.toISOString().slice(0, 10) }));
+    }
+    const svc = createDashboardService(fake.repos);
+    const rows = await svc.recurringPatients('clinic-1');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ patientName: 'Test Patient', mrno: '1001', visitCount: 3 });
+  });
+
+  it('excludes a patient under the minimum visit count', async () => {
+    fake.visits.set('v1', baseVisit('v1', { visitDate: new Date().toISOString().slice(0, 10) }));
+    const svc = createDashboardService(fake.repos);
+    expect(await svc.recurringPatients('clinic-1')).toEqual([]);
+  });
+
+  it('ignores visits outside the rolling window', async () => {
+    for (let i = 0; i < 3; i++) {
+      fake.visits.set(`v${i}`, baseVisit(`v${i}`, { visitDate: '2020-01-0' + (i + 1) }));
+    }
+    const svc = createDashboardService(fake.repos);
+    expect(await svc.recurringPatients('clinic-1')).toEqual([]);
   });
 });

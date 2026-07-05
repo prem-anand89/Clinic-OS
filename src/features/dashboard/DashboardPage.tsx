@@ -11,8 +11,6 @@ import { BarChart } from '@/components/BarChart';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
 import type { OpenPackageRow } from '@/services/dashboardService';
 
-const RECENT_VISITS_LIMIT = 8;
-
 // Reference categorical palette — all 8 validated slots in fixed order,
 // assigned by index and never cycled (a 9th series would repeat hues and
 // break CVD separation; fold into "Other" before that ever happens).
@@ -34,8 +32,12 @@ export function DashboardPage() {
   const trend = useLiveQuery(() => dashboardService.revenueTrend(clinic.id), [clinic.id]);
   const openPackages = useLiveQuery(() => dashboardService.openPackages(clinic.id), [clinic.id]);
   const outstanding = useLiveQuery(() => dashboardService.outstandingInvoices(clinic.id), [clinic.id]);
-  const recentVisits = useLiveQuery(
-    () => dashboardService.recentVisits(clinic.id, RECENT_VISITS_LIMIT),
+  const singleVisitPatients = useLiveQuery(
+    () => dashboardService.singleVisitPatients(clinic.id),
+    [clinic.id]
+  );
+  const recurringPatients = useLiveQuery(
+    () => dashboardService.recurringPatients(clinic.id),
     [clinic.id]
   );
 
@@ -65,55 +67,98 @@ export function DashboardPage() {
     <div className="space-y-6">
       <h1 className="font-display text-lg font-semibold text-[var(--ink)]">Dashboard</h1>
 
-      <SectionCard title="Recent visits">
+      <SectionCard title="Patients who didn't come back">
+        <p className="mb-3 text-xs text-[var(--muted)]">
+          Exactly one visit on record, more than 14 days ago — worth a call to find out why, or a
+          reminder to book again.
+        </p>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-[var(--border)] text-sm">
             <thead>
               <tr>
-                <th className={th}>Date</th>
                 <th className={th}>Patient</th>
-                <th className={th}>Therapist</th>
                 <th className={th}>Service</th>
-                <th className={thNum}>Bill</th>
-                <th className={th}>Invoice</th>
+                <th className={th}>Visited on</th>
+                <th className={thNum}>Days since</th>
+                <th className={th}></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
-              {(recentVisits ?? []).map((v) => (
-                <tr key={v.visitId} className="hover:bg-[var(--paper)]">
-                  <td className={td}>{v.visitDate}</td>
+              {(singleVisitPatients ?? []).map((p) => (
+                <tr key={p.patientId} className="hover:bg-[var(--paper)]">
                   <td className={td}>
-                    <span className="font-display">{v.patientName}</span>{' '}
-                    <span className="text-xs text-[var(--muted)]">{v.mrno}</span>
+                    <span className="font-display">{p.patientName}</span>{' '}
+                    <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
                   </td>
-                  <td className={td}>{v.therapistName}</td>
-                  <td className={td}>{v.serviceName}</td>
-                  <td className={tdNum}>{formatINR(v.billPaise)}</td>
+                  <td className={td}>{p.serviceName}</td>
+                  <td className={td}>{p.visitDate}</td>
+                  <td className={tdNum}>{p.daysSince}</td>
                   <td className={td}>
-                    {v.hasInvoice ? (
-                      <Pill tone="green">Invoiced</Pill>
-                    ) : v.billPaise > 0 ? (
-                      <Pill tone="amber">Not invoiced</Pill>
-                    ) : (
-                      <span className="text-xs text-[var(--muted)]">₹0 session</span>
-                    )}
+                    <Link
+                      to="/visits"
+                      search={{ patientId: p.patientId }}
+                      className="font-medium text-[var(--teal)] hover:underline"
+                    >
+                      View
+                    </Link>
                   </td>
                 </tr>
               ))}
-              {recentVisits?.length === 0 && (
+              {singleVisitPatients?.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
-                    No visits logged yet.
+                  <td colSpan={5} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
+                    No lapsed single-visit patients right now.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <div className="mt-3 text-right">
-          <Link to="/visits" className="text-sm font-medium text-[var(--teal)] hover:underline">
-            View all visits →
-          </Link>
+      </SectionCard>
+
+      <SectionCard title="Regulars — last 30 days">
+        <p className="mb-3 text-xs text-[var(--muted)]">
+          Three or more visits in the last month — your most engaged patients right now.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
+            <thead>
+              <tr>
+                <th className={th}>Patient</th>
+                <th className={thNum}>Visits</th>
+                <th className={th}>Last visit</th>
+                <th className={th}></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {(recurringPatients ?? []).map((p) => (
+                <tr key={p.patientId} className="hover:bg-[var(--paper)]">
+                  <td className={td}>
+                    <span className="font-display">{p.patientName}</span>{' '}
+                    <span className="text-xs text-[var(--muted)]">{p.mrno}</span>
+                  </td>
+                  <td className={tdNum}>{p.visitCount}</td>
+                  <td className={td}>{p.lastVisitOn}</td>
+                  <td className={td}>
+                    <Link
+                      to="/visits"
+                      search={{ patientId: p.patientId }}
+                      className="font-medium text-[var(--teal)] hover:underline"
+                    >
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+              {recurringPatients?.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-3 py-6 text-center text-sm text-[var(--muted)]">
+                    No one has visited 3+ times in the last 30 days yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </SectionCard>
 

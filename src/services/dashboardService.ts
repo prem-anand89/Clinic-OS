@@ -1,12 +1,13 @@
-import type { UUID } from '@/domain/types';
+import type { UUID, Visit } from '@/domain/types';
 import type { Paise } from '@/domain/money';
 import type { FyMonth } from '@/domain/fiscalYear';
-import { daysSince, groupOpenPackages, isStale } from '@/domain/packageTracking';
+import { daysSince, groupOpenPackages, isStale, STALE_PACKAGE_DAYS } from '@/domain/packageTracking';
 import type { Repos } from '@/repositories/types';
 import { createReportService, type MonthlyReport } from './reportService';
 
 export interface OpenPackageRow {
   packageGroupId: UUID;
+  patientId: UUID;
   patientName: string;
   mrno: string;
   serviceName: string;
@@ -43,6 +44,33 @@ export interface RecentVisitRow {
   serviceName: string;
   billPaise: Paise;
   hasInvoice: boolean;
+}
+
+export interface SingleVisitPatientRow {
+  patientId: UUID;
+  patientName: string;
+  mrno: string;
+  serviceName: string;
+  visitDate: string;
+  daysSince: number;
+}
+
+export interface RecurringPatientRow {
+  patientId: UUID;
+  patientName: string;
+  mrno: string;
+  visitCount: number;
+  lastVisitOn: string;
+}
+
+/** Groups a clinic-wide visit list by patient, skipping deleted rows. */
+function groupByPatient(visits: Visit[]): Map<UUID, Visit[]> {
+  const byPatient = new Map<UUID, Visit[]>();
+  for (const v of visits) {
+    if (!byPatient.has(v.patientId)) byPatient.set(v.patientId, []);
+    byPatient.get(v.patientId)!.push(v);
+  }
+  return byPatient;
 }
 
 /** Rolling window ending at (and including) the current calendar month. */
@@ -87,6 +115,7 @@ export function createDashboardService(repos: Repos) {
           const patient = patientById.get(g.patientId);
           return {
             packageGroupId: g.packageGroupId,
+            patientId: g.patientId,
             patientName: patient?.name ?? 'Unknown',
             mrno: patient?.mrno ?? '—',
             serviceName: serviceName.get(g.serviceCatalogId) ?? 'Unknown',
@@ -154,6 +183,77 @@ export function createDashboardService(repos: Repos) {
           billPaise: v.actualBillPaise,
           hasInvoice: Boolean(v.invoiceId),
         }));
+    },
+
+    /**
+     * Patients with exactly one visit in their entire history, past the same
+     * staleness window used for packages — came once, never rebooked. A
+     * retention flag: is this a one-off service, or someone who needs a nudge?
+     */
+    async singleVisitPatients(
+      clinicId: UUID,
+      thresholdDays = STALE_PACKAGE_DAYS
+    ): Promise<SingleVisitPatientRow[]> {
+      const [visits, patients, catalog] = await Promise.all([
+        repos.visits.list({ clinicId }),
+        repos.patients.list(clinicId),
+        repos.catalog.list(clinicId, true),
+      ]);
+      const patientById = new Map(patients.map((p) => [p.id, p]));
+      const serviceNameById = new Map(catalog.map((c) => [c.id, c.name]));
+
+      const rows: SingleVisitPatientRow[] = [];
+      for (const [patientId, patientVisits] of groupByPatient(visits)) {
+        if (patientVisits.length !== 1) continue;
+        const v = patientVisits[0];
+        const since = daysSince(v.visitDate);
+        if (since <= thresholdDays) continue;
+        const patient = patientById.get(patientId);
+        rows.push({
+          patientId,
+          patientName: patient?.name ?? 'Unknown',
+          mrno: patient?.mrno ?? '—',
+          serviceName: serviceNameById.get(v.serviceCatalogId) ?? '—',
+          visitDate: v.visitDate,
+          daysSince: since,
+        });
+      }
+      return rows.sort((a, b) => b.daysSince - a.daysSince);
+    },
+
+    /**
+     * Patients with several visits in a recent rolling window — the clinic's
+     * currently-engaged regulars, surfaced for recognition or an upsell
+     * conversation rather than a retention worry.
+     */
+    async recurringPatients(
+      clinicId: UUID,
+      minVisits = 3,
+      windowDays = 30
+    ): Promise<RecurringPatientRow[]> {
+      const [visits, patients] = await Promise.all([
+        repos.visits.list({ clinicId }),
+        repos.patients.list(clinicId),
+      ]);
+      const patientById = new Map(patients.map((p) => [p.id, p]));
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - windowDays);
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+      const recent = visits.filter((v) => v.visitDate >= cutoffStr);
+
+      const rows: RecurringPatientRow[] = [];
+      for (const [patientId, patientVisits] of groupByPatient(recent)) {
+        if (patientVisits.length < minVisits) continue;
+        const patient = patientById.get(patientId);
+        rows.push({
+          patientId,
+          patientName: patient?.name ?? 'Unknown',
+          mrno: patient?.mrno ?? '—',
+          visitCount: patientVisits.length,
+          lastVisitOn: patientVisits.map((v) => v.visitDate).sort().at(-1)!,
+        });
+      }
+      return rows.sort((a, b) => b.visitCount - a.visitCount);
     },
   };
 }
