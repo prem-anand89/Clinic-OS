@@ -169,7 +169,7 @@ export function VisitsPage() {
                   <td className={td}>
                     {therapistName.get(v.therapistId) ?? '—'}
                     {v.sharedTherapistId && (
-                      <div className="text-sm font-medium text-[var(--moss)]" title="Internal revenue split">
+                      <div className="text-xs font-medium text-[var(--moss-strong)]" title="Internal revenue split">
                         ⇄ {therapistName.get(v.sharedTherapistId) ?? '—'} {v.sharedPct}%
                       </div>
                     )}
