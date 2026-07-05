@@ -6,13 +6,16 @@ import { toFriendlyMessage } from '@/lib/errors';
 import { Field, inputCls, btnPrimary, ErrorNote } from '@/components/ui';
 
 /**
- * Landing page for a Supabase password-recovery email link. The recovery
- * token lives in the URL fragment; the Supabase client's default
- * detectSessionInUrl picks it up and establishes a session before this
- * component's checks run, without any code here needing to parse it.
+ * Landing page for a Supabase password-recovery email link. Handles both
+ * link shapes Supabase can send: an implicit-flow token in the URL fragment
+ * (auto-detected by the client before this component mounts) and a PKCE
+ * `?code=` query param (needs an explicit exchange, done below). Distinct
+ * "checking" vs "invalid" states matter here — collapsing them meant a slow
+ * check or an unhandled PKCE code both looked identical to a dead link.
  */
 export function ResetPasswordPage() {
   const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -22,9 +25,14 @@ export function ResetPasswordPage() {
 
   useEffect(() => {
     if (!hasSupabaseConfig) return;
-    void getSupabase()!
-      .auth.getSession()
-      .then(({ data }) => setReady(Boolean(data.session)));
+    const supabase = getSupabase()!;
+    (async () => {
+      const code = new URL(window.location.href).searchParams.get('code');
+      if (code) await supabase.auth.exchangeCodeForSession(code);
+      const { data } = await supabase.auth.getSession();
+      setReady(Boolean(data.session));
+      setChecking(false);
+    })();
   }, []);
 
   if (!hasSupabaseConfig) {
@@ -63,7 +71,9 @@ export function ResetPasswordPage() {
       <h1 className="mb-1 text-center text-xl font-semibold text-slate-900">Clinic OS</h1>
       <p className="mb-6 text-center text-sm text-slate-500">Choose a new password</p>
       <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        {done ? (
+        {checking ? (
+          <p className="text-sm text-slate-500">Checking your link…</p>
+        ) : done ? (
           <>
             <p className="text-sm text-slate-700">
               Password updated. You're signed in — continue to the app.
