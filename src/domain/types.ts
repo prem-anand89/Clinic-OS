@@ -40,6 +40,8 @@ export interface Therapist {
   clinicId: UUID;
   name: string;
   active: boolean;
+  /** Linked Supabase auth user, if this therapist also logs in themselves. */
+  userId?: UUID | null;
   updatedAt: string;
 }
 
@@ -153,6 +155,9 @@ export interface Visit {
   invoiceId: UUID | null;
   deleted: boolean;
   updatedAt: string;
+  /** Auth user who created/last touched this row. Optional: older cached rows lack the key. */
+  createdBy?: UUID | null;
+  updatedBy?: UUID | null;
 }
 
 export type PaymentMode = 'Cash' | 'Card' | 'UPI' | 'Insurance';

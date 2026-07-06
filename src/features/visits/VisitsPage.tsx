@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, dashboardService, invoiceService, paymentService, visitService } from '@/services';
+import { db } from '@/lib/db';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import { formatDateDMY } from '@/domain/fiscalYear';
@@ -102,7 +103,19 @@ export function VisitsPage() {
     () => new Map((therapists ?? []).map((t) => [t.id, t.name])),
     [therapists]
   );
+  const therapistNameByUserId = useMemo(
+    () => new Map((therapists ?? []).filter((t) => t.userId).map((t) => [t.userId as string, t.name])),
+    [therapists]
+  );
   const patientById = useMemo(() => new Map((patients ?? []).map((p) => [p.id, p])), [patients]);
+  const failedVisitSyncs = useLiveQuery(
+    () => db.outbox.filter((e) => e.table === 'visits' && !!e.error).toArray(),
+    []
+  );
+  const syncErrorByVisitId = useMemo(
+    () => new Map((failedVisitSyncs ?? []).map((e) => [e.rowId, e.error ?? 'Unknown error'])),
+    [failedVisitSyncs]
+  );
   const catalog = useLiveQuery(() => repos.catalog.list(clinic.id, true), [clinic.id]);
   const serviceName = useMemo(() => new Map((catalog ?? []).map((c) => [c.id, c.name])), [catalog]);
 
@@ -331,7 +344,25 @@ export function VisitsPage() {
               const p = patientById.get(v.patientId);
               return (
                 <tr key={v.id} className="hover:bg-[var(--paper)]">
-                  <td className={td}>{formatDateDMY(v.visitDate)}</td>
+                  <td className={td}>
+                    {formatDateDMY(v.visitDate)}
+                    {v.createdBy && v.updatedBy && v.createdBy !== v.updatedBy && (
+                      <span
+                        className="ml-1 text-[var(--muted)]"
+                        title={`Edited by ${therapistNameByUserId.get(v.updatedBy) ?? 'another user'}`}
+                      >
+                        ✎
+                      </span>
+                    )}
+                    {syncErrorByVisitId.has(v.id) && (
+                      <span
+                        className="ml-1 text-[var(--rust)]"
+                        title={`Sync issue: ${syncErrorByVisitId.get(v.id)}`}
+                      >
+                        ⚠
+                      </span>
+                    )}
+                  </td>
                   <td className={td}>
                     <div className="font-display">{p?.name ?? '—'}</div>
                     <div className="text-xs text-[var(--muted)]">{p?.mrno}</div>
