@@ -116,6 +116,32 @@ export function InfoTip({ text }: { text: string }) {
   );
 }
 
+/**
+ * Compact dot-thread showing progress through a multi-session package —
+ * filled for sessions logged, teal for the current one, hollow for the rest.
+ * A glanceable stand-in for "session 2 of 3" that scans in a table row.
+ */
+export function PackageThread({
+  sessionIndex,
+  packageTotal,
+}: {
+  sessionIndex: number;
+  packageTotal: number;
+}) {
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 align-middle"
+      title={`Session ${sessionIndex} of ${packageTotal}`}
+    >
+      {Array.from({ length: packageTotal }, (_, i) => {
+        const n = i + 1;
+        const tone = n < sessionIndex ? 'bg-[var(--moss)]' : n === sessionIndex ? 'bg-[var(--teal)]' : 'bg-[var(--border)]';
+        return <span key={n} className={`h-1.5 w-1.5 rounded-full ${tone}`} />;
+      })}
+    </span>
+  );
+}
+
 export const th = 'px-3 py-2 text-left text-xs font-semibold text-[var(--muted)]';
 export const td = 'px-3 py-2 text-sm text-[var(--ink)]';
 export const tdNum = 'font-num px-3 py-2 text-sm text-[var(--ink)] text-right';

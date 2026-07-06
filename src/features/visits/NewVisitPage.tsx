@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { repos, visitService, patientService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
@@ -37,6 +37,7 @@ interface OpenPackage {
 export function NewVisitPage() {
   const clinic = useClinic();
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { repeatVisitId?: string };
 
   // Patient selection
   const [query, setQuery] = useState('');
@@ -116,6 +117,33 @@ export function NewVisitPage() {
     }
     return open.sort((a, b) => b.startedOn.localeCompare(a.startedOn));
   }, [clinic.id, patient?.id]);
+
+  // "Repeat last visit": pre-fill patient/therapist/condition from the
+  // visit being repeated, then — once that patient's open packages have
+  // loaded — select the matching package so this becomes its next session.
+  const repeatVisit = useLiveQuery(
+    () => (search.repeatVisitId ? repos.visits.get(search.repeatVisitId) : undefined),
+    [search.repeatVisitId]
+  );
+
+  useEffect(() => {
+    if (!repeatVisit || patient) return;
+    (async () => {
+      const p = await repos.patients.get(repeatVisit.patientId);
+      if (p) {
+        setPatient(p);
+        setCondition(repeatVisit.condition ?? p.primaryCondition ?? '');
+      }
+      setTherapistId(repeatVisit.therapistId);
+      setMode('continuation');
+    })();
+  }, [repeatVisit, patient]);
+
+  useEffect(() => {
+    if (!repeatVisit?.packageGroupId || !openPackages?.length) return;
+    const match = openPackages.find((op) => op.packageGroupId === repeatVisit.packageGroupId);
+    if (match) setOpenPackageId(match.packageGroupId);
+  }, [repeatVisit, openPackages]);
 
   const selectedService = useMemo(
     () => (catalog ?? []).find((c) => c.id === serviceCatalogId),

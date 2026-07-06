@@ -16,6 +16,7 @@ import {
   tdNum,
   ErrorNote,
   Field,
+  PackageThread,
   SectionCard,
   StatTile,
 } from '@/components/ui';
@@ -33,6 +34,7 @@ const DATE_PRESETS: { key: DatePreset; label: string }[] = [
   { key: 'all', label: 'All' },
 ];
 const toIsoDate = (d: Date) => d.toISOString().slice(0, 10);
+const TREATMENT_TRUNCATE = 40;
 
 export function VisitsPage() {
   const clinic = useClinic();
@@ -51,6 +53,16 @@ export function VisitsPage() {
   const [paidNow, setPaidNow] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [expandedTreatment, setExpandedTreatment] = useState<Set<string>>(new Set());
+
+  function toggleTreatment(id: string) {
+    setExpandedTreatment((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   function applyDatePreset(preset: DatePreset) {
     setDatePreset(preset);
@@ -106,6 +118,10 @@ export function VisitsPage() {
 
   const openPackages = useLiveQuery(() => dashboardService.openPackages(clinic.id), [clinic.id]);
   const followUps = useMemo(() => (openPackages ?? []).filter((p) => p.stale), [openPackages]);
+  const openPackageGroupIds = useMemo(
+    () => new Set((openPackages ?? []).map((p) => p.packageGroupId)),
+    [openPackages]
+  );
 
   const weeklySummary = useLiveQuery(() => dashboardService.weeklySummary(clinic.id), [clinic.id]);
   const monthlyNew = useLiveQuery(() => dashboardService.monthlyNewCounts(clinic.id), [clinic.id]);
@@ -122,6 +138,19 @@ export function VisitsPage() {
       postTax: byNumber<Visit>((v) => v.postTaxPaise),
     },
     sort
+  );
+
+  const totals = useMemo(
+    () =>
+      (visits ?? []).reduce(
+        (acc, v) => ({
+          bill: acc.bill + v.actualBillPaise,
+          bmShare: acc.bmShare + v.bmSharePaise,
+          postTax: acc.postTax + v.postTaxPaise,
+        }),
+        { bill: 0, bmShare: 0, postTax: 0 }
+      ),
+    [visits]
   );
 
   async function issue() {
@@ -208,7 +237,7 @@ export function VisitsPage() {
 
       <div className="flex flex-wrap gap-3">
         <StatTile label="This week's visits" value={weeklySummary?.visitCount ?? 0} />
-        <StatTile label="This week's billed" value={formatINR(weeklySummary?.billedPaise ?? 0)} />
+        <StatTile label="This week's revenue (Post-Tax)" value={formatINR(weeklySummary?.postTaxPaise ?? 0)} />
         <StatTile label="Packages this month" value={monthlyNew?.newPackages ?? 0} />
         <StatTile label="New patients this month" value={monthlyNew?.newPatients ?? 0} />
       </div>
@@ -287,6 +316,8 @@ export function VisitsPage() {
               <SortHeader label="Patient" k="patient" sort={sort} />
               <SortHeader label="Therapist" k="therapist" sort={sort} />
               <th className={th}>Service</th>
+              <th className={th}>Condition</th>
+              <th className={th}>Treatment</th>
               <SortHeader label="Bill" k="bill" sort={sort} numeric firstDir="desc" />
               <th className={thNum}>Adj.</th>
               <SortHeader label={`${labels.own} Share`} k="bmShare" sort={sort} numeric firstDir="desc" />
@@ -316,9 +347,29 @@ export function VisitsPage() {
                   <td className={td}>
                     {serviceName.get(v.serviceCatalogId) ?? '—'}
                     {v.sessionIndex && v.packageTotal && (
-                      <span className="ml-1 text-xs text-[var(--muted)]">
-                        {v.sessionIndex}/{v.packageTotal}
+                      <span className="ml-1.5">
+                        <PackageThread sessionIndex={v.sessionIndex} packageTotal={v.packageTotal} />
                       </span>
+                    )}
+                  </td>
+                  <td className={td}>{v.condition ?? '—'}</td>
+                  <td className={`${td} max-w-56`}>
+                    {v.treatmentNotes ? (
+                      v.treatmentNotes.length > TREATMENT_TRUNCATE ? (
+                        <button
+                          type="button"
+                          className="text-left hover:text-[var(--teal)]"
+                          onClick={() => toggleTreatment(v.id)}
+                        >
+                          {expandedTreatment.has(v.id)
+                            ? v.treatmentNotes
+                            : `${v.treatmentNotes.slice(0, TREATMENT_TRUNCATE)}…`}
+                        </button>
+                      ) : (
+                        v.treatmentNotes
+                      )
+                    ) : (
+                      <span className="text-[var(--muted)]">—</span>
                     )}
                   </td>
                   <td className={tdNum}>{formatINR(v.actualBillPaise)}</td>
@@ -353,6 +404,16 @@ export function VisitsPage() {
                   </td>
                   <td className={td}>
                     <div className="flex gap-3">
+                      {v.packageGroupId && openPackageGroupIds.has(v.packageGroupId) && (
+                        <Link
+                          to="/visits/new"
+                          search={{ repeatVisitId: v.id }}
+                          className="text-xs text-[var(--muted)] hover:text-[var(--teal)]"
+                          title="Start the next session with this visit's therapist, service, and condition pre-filled"
+                        >
+                          Repeat
+                        </Link>
+                      )}
                       {v.actualBillPaise > 0 && (
                         <button
                           className="text-xs text-[var(--muted)] hover:text-[var(--moss)]"
@@ -383,12 +444,27 @@ export function VisitsPage() {
             })}
             {visits?.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-3 py-8 text-center text-sm text-[var(--muted)]">
+                <td colSpan={12} className="px-3 py-8 text-center text-sm text-[var(--muted)]">
                   No visits match — log one with “New visit”.
                 </td>
               </tr>
             )}
           </tbody>
+          {visits && visits.length > 0 && (
+            <tfoot className="border-t-2 border-[var(--border)] bg-[var(--paper)]">
+              <tr>
+                <td colSpan={6} className="px-3 py-2 text-sm font-semibold text-[var(--ink)]">
+                  Totals ({visits.length} visit{visits.length === 1 ? '' : 's'})
+                </td>
+                <td className={tdNum}>{formatINR(totals.bill)}</td>
+                <td className={tdNum}></td>
+                <td className={tdNum}>{formatINR(totals.bmShare)}</td>
+                <td className={tdNum}>{formatINR(totals.postTax)}</td>
+                <td className={td}></td>
+                <td className={td}></td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 

@@ -49,7 +49,8 @@ export interface RecentVisitRow {
 
 export interface WeeklySummary {
   visitCount: number;
-  billedPaise: Paise;
+  /** Post-Tax BM share, not the gross bill — the clinic's actual take. */
+  postTaxPaise: Paise;
 }
 
 export interface MonthlyNewCounts {
@@ -277,7 +278,7 @@ export function createDashboardService(repos: Repos) {
       const recent = visits.filter((v) => v.visitDate >= cutoffStr);
       return {
         visitCount: recent.length,
-        billedPaise: recent.reduce((sum, v) => sum + v.actualBillPaise, 0),
+        postTaxPaise: recent.reduce((sum, v) => sum + v.postTaxPaise, 0),
       };
     },
 

@@ -356,15 +356,25 @@ describe('dashboardService.weeklySummary', () => {
     fake = makeFakeRepos();
   });
 
-  it('counts visits and bill total within the rolling window', async () => {
+  it('counts visits and sums Post-Tax BM (not the gross bill) within the rolling window', async () => {
     const today = new Date();
-    fake.visits.set('v1', baseVisit('v1', { visitDate: today.toISOString().slice(0, 10), actualBillPaise: rs(1000) }));
+    fake.visits.set(
+      'v1',
+      baseVisit('v1', {
+        visitDate: today.toISOString().slice(0, 10),
+        actualBillPaise: rs(5400),
+        postTaxPaise: rs(3645),
+      })
+    );
     const twoWeeksAgo = new Date(today);
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    fake.visits.set('v2', baseVisit('v2', { visitDate: twoWeeksAgo.toISOString().slice(0, 10), actualBillPaise: rs(2000) }));
+    fake.visits.set(
+      'v2',
+      baseVisit('v2', { visitDate: twoWeeksAgo.toISOString().slice(0, 10), actualBillPaise: rs(2000), postTaxPaise: rs(1350) })
+    );
     const svc = createDashboardService(fake.repos);
     const summary = await svc.weeklySummary('clinic-1');
-    expect(summary).toEqual({ visitCount: 1, billedPaise: rs(1000) });
+    expect(summary).toEqual({ visitCount: 1, postTaxPaise: rs(3645) });
   });
 });
 

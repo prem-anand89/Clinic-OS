@@ -66,6 +66,8 @@ const visitsRoute = createRoute({
 const newVisitRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/visits/new',
+  validateSearch: (search: Record<string, unknown>): { repeatVisitId?: string } =>
+    typeof search.repeatVisitId === 'string' ? { repeatVisitId: search.repeatVisitId } : {},
   component: NewVisitPage,
 });
 
