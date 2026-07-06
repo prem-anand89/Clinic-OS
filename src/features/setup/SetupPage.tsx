@@ -437,10 +437,39 @@ function Catalog() {
   );
 }
 
+interface ClinicMember {
+  userId: string;
+  email: string;
+  role: string;
+}
+
 function Therapists() {
   const clinic = useClinic();
   const therapists = useLiveQuery(() => repos.therapists.list(clinic.id, true), [clinic.id]);
   const [name, setName] = useState('');
+  const [members, setMembers] = useState<ClinicMember[] | null>(null);
+  const [membersError, setMembersError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    (async () => {
+      const { data, error } = await supabase.rpc('list_clinic_members_with_email', {
+        p_clinic_id: clinic.id,
+      });
+      if (error) {
+        setMembersError(toFriendlyMessage(new Error(error.message)));
+        return;
+      }
+      setMembers(
+        (data as { user_id: string; email: string; role: string }[]).map((m) => ({
+          userId: m.user_id,
+          email: m.email,
+          role: m.role,
+        }))
+      );
+    })();
+  }, [clinic.id]);
 
   async function add() {
     if (!name.trim()) return;
@@ -456,10 +485,10 @@ function Therapists() {
 
   return (
     <SectionCard title="Therapists">
-      <ul className="mb-3 space-y-1">
+      <ul className="mb-3 space-y-2">
         {(therapists ?? []).map((t) => (
-          <li key={t.id} className="flex items-center gap-3 text-sm">
-            <span className={t.active ? '' : 'text-[var(--muted)] line-through'}>{t.name}</span>
+          <li key={t.id} className="flex flex-wrap items-center gap-3 text-sm">
+            <span className={`min-w-32 ${t.active ? '' : 'text-[var(--muted)] line-through'}`}>{t.name}</span>
             <button
               className="text-xs text-[var(--teal)] hover:underline"
               onClick={() =>
@@ -472,6 +501,29 @@ function Therapists() {
             >
               {t.active ? 'Deactivate' : 'Reactivate'}
             </button>
+            {members && members.length > 0 && (
+              <label className="ml-auto flex items-center gap-2 text-xs text-[var(--muted)]">
+                Linked login
+                <select
+                  className={inputCls}
+                  value={t.userId ?? ''}
+                  onChange={(e) =>
+                    void repos.therapists.put({
+                      ...t,
+                      userId: e.target.value || null,
+                      updatedAt: new Date().toISOString(),
+                    })
+                  }
+                >
+                  <option value="">— None —</option>
+                  {members.map((m) => (
+                    <option key={m.userId} value={m.userId}>
+                      {m.email}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </li>
         ))}
       </ul>
@@ -488,7 +540,15 @@ function Therapists() {
       </div>
       <p className="mt-2 text-xs text-[var(--muted)]">
         Deactivating keeps history intact — past visits still show the therapist.
+        {members && members.length > 0 && (
+          <>
+            {' '}
+            Linking a therapist to their own login lets edit history show their name instead of
+            "another user".
+          </>
+        )}
       </p>
+      <ErrorNote message={membersError} />
     </SectionCard>
   );
 }
