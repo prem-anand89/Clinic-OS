@@ -10,8 +10,11 @@ import {
   clinicBillingConfig,
   clinicShareLabels,
   effectivePricePerSession,
+  visibleVisitColumns,
+  VISIT_COLUMN_LABELS,
   type CatalogItem,
   type Clinic,
+  type VisitColumnKey,
 } from '@/domain/types';
 import type { TdsBasis } from '@/domain/split';
 import {
@@ -333,6 +336,32 @@ function ClinicProfile() {
           </Field>
         )}
       </div>
+
+      <div className="mt-4 border-t border-[var(--border)] pt-4">
+        <p className="mb-2 text-xs font-medium text-[var(--muted)]">
+          Visits table columns — pick which optional columns show
+        </p>
+        <div className="flex flex-wrap gap-4">
+          {(Object.keys(VISIT_COLUMN_LABELS) as VisitColumnKey[]).map((key) => (
+            <label key={key} className="flex items-center gap-2 text-sm text-[var(--ink)]">
+              <input
+                type="checkbox"
+                checked={visibleVisitColumns(form)[key]}
+                onChange={(e) =>
+                  set({ visitColumnPrefs: { ...form.visitColumnPrefs, [key]: e.target.checked } })
+                }
+              />
+              {VISIT_COLUMN_LABELS[key]}
+            </label>
+          ))}
+        </div>
+        {hospitalSplit && (
+          <p className="mt-2 text-xs text-[var(--muted)]">
+            The {labels.own} Share and Post-Tax columns follow the clinic type above.
+          </p>
+        )}
+      </div>
+
       <div className="mt-4 flex items-center gap-3">
         <button className={btnPrimary} onClick={() => void save()}>
           Save clinic settings

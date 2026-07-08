@@ -30,7 +30,38 @@ export interface Clinic {
   billingMode?: 'simple' | 'hospital_split';
   /** Whether the internal therapist revenue-split feature is available. */
   enableTherapistSplit?: boolean;
+  /**
+   * Per-clinic show/hide for the optional Visits-table columns. Missing keys
+   * fall back to the defaults in `visibleVisitColumns`. Optional so older
+   * cached rows are unaffected.
+   */
+  visitColumnPrefs?: Partial<Record<VisitColumnKey, boolean>> | null;
   updatedAt: string;
+}
+
+/** Optional (toggleable) Visits-table columns — the essentials aren't listed. */
+export type VisitColumnKey = 'condition' | 'treatment' | 'adjustment';
+
+export const VISIT_COLUMN_LABELS: Record<VisitColumnKey, string> = {
+  condition: 'Condition',
+  treatment: 'Treatment',
+  adjustment: 'Adjustment (Adj.)',
+};
+
+/**
+ * Which optional Visits columns a clinic shows. Adjustment is off by default
+ * (most clinics don't need the catalog-vs-actual variance column); condition
+ * and treatment are on. Stored prefs override these per clinic.
+ */
+export function visibleVisitColumns(
+  clinic: Pick<Clinic, 'visitColumnPrefs'>
+): Record<VisitColumnKey, boolean> {
+  const prefs = clinic.visitColumnPrefs ?? {};
+  return {
+    condition: prefs.condition ?? true,
+    treatment: prefs.treatment ?? true,
+    adjustment: prefs.adjustment ?? false,
+  };
 }
 
 /** Resolve a clinic's share-label abbreviations, defaulting to BM/HV. */

@@ -1,6 +1,6 @@
 import type { UUID, Visit } from '@/domain/types';
 import type { Paise } from '@/domain/money';
-import type { FyMonth } from '@/domain/fiscalYear';
+import { currentWeekRange, type FyMonth } from '@/domain/fiscalYear';
 import { daysSince, groupOpenPackages, isStale, STALE_PACKAGE_DAYS } from '@/domain/packageTracking';
 import type { Repos } from '@/repositories/types';
 import { createReportService, type MonthlyReport } from './reportService';
@@ -49,8 +49,12 @@ export interface RecentVisitRow {
 
 export interface WeeklySummary {
   visitCount: number;
-  /** Post-Tax BM share, not the gross bill — the clinic's actual take. */
-  postTaxPaise: Paise;
+  /**
+   * Take-home actually collected for this Mon–Sun week's visits — sums the
+   * post-tax figure of visits that are invoiced AND paid. In simple mode
+   * post-tax equals the bill, so this is just the collected bill amount.
+   */
+  collectedPaise: Paise;
 }
 
 export interface MonthlyNewCounts {
@@ -269,16 +273,28 @@ export function createDashboardService(repos: Repos) {
       return rows.sort((a, b) => b.visitCount - a.visitCount);
     },
 
-    /** Rolling window ending today — clinic-wide, independent of any table filters. */
-    async weeklySummary(clinicId: UUID, days = 7): Promise<WeeklySummary> {
-      const visits = await repos.visits.list({ clinicId });
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - (days - 1));
-      const cutoffStr = cutoff.toISOString().slice(0, 10);
-      const recent = visits.filter((v) => v.visitDate >= cutoffStr);
+    /**
+     * The current Monday–Sunday week — clinic-wide, independent of table
+     * filters. visitCount is all visits this week; collectedPaise is the
+     * take-home for those that are invoiced AND paid (absence of a payment
+     * row reads as paid, matching InvoicePayment's convention).
+     */
+    async weeklySummary(clinicId: UUID, asOf = new Date()): Promise<WeeklySummary> {
+      const [visits, payments] = await Promise.all([
+        repos.visits.list({ clinicId }),
+        repos.invoicePayments.list(clinicId),
+      ]);
+      const { from, to } = currentWeekRange(asOf);
+      const statusByInvoiceId = new Map(payments.map((p) => [p.invoiceId, p.status]));
+      const isPaid = (invoiceId: UUID | null) =>
+        invoiceId != null && statusByInvoiceId.get(invoiceId) !== 'outstanding';
+
+      const weekVisits = visits.filter((v) => v.visitDate >= from && v.visitDate <= to);
       return {
-        visitCount: recent.length,
-        postTaxPaise: recent.reduce((sum, v) => sum + v.postTaxPaise, 0),
+        visitCount: weekVisits.length,
+        collectedPaise: weekVisits
+          .filter((v) => isPaid(v.invoiceId))
+          .reduce((sum, v) => sum + v.postTaxPaise, 0),
       };
     },
 

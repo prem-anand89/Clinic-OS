@@ -356,25 +356,28 @@ describe('dashboardService.weeklySummary', () => {
     fake = makeFakeRepos();
   });
 
-  it('counts visits and sums Post-Tax BM (not the gross bill) within the rolling window', async () => {
-    const today = new Date();
-    fake.visits.set(
-      'v1',
-      baseVisit('v1', {
-        visitDate: today.toISOString().slice(0, 10),
-        actualBillPaise: rs(5400),
-        postTaxPaise: rs(3645),
-      })
-    );
-    const twoWeeksAgo = new Date(today);
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    fake.visits.set(
-      'v2',
-      baseVisit('v2', { visitDate: twoWeeksAgo.toISOString().slice(0, 10), actualBillPaise: rs(2000), postTaxPaise: rs(1350) })
-    );
-    const svc = createDashboardService(fake.repos);
-    const summary = await svc.weeklySummary('clinic-1');
-    expect(summary).toEqual({ visitCount: 1, postTaxPaise: rs(3645) });
+  it('counts this Mon–Sun week and collects only paid visits by visit date', async () => {
+    const asOf = new Date(2026, 5, 10); // Wed 10 Jun 2026 (local)
+    const inWeek = '2026-06-10';
+    // Invoiced with no explicit payment row → reads as paid → counts as collected.
+    fake.visits.set('v1', baseVisit('v1', { visitDate: inWeek, postTaxPaise: rs(3645), invoiceId: 'inv-1' }));
+    // Invoiced but outstanding → a visit this week, but NOT collected.
+    fake.visits.set('v2', baseVisit('v2', { visitDate: inWeek, postTaxPaise: rs(1000), invoiceId: 'inv-2' }));
+    fake.invoicePayments.set('p2', {
+      id: 'p2',
+      clinicId: 'clinic-1',
+      invoiceId: 'inv-2',
+      status: 'outstanding',
+      paidAt: null,
+      updatedAt: '',
+    });
+    // Not invoiced yet → not collected.
+    fake.visits.set('v3', baseVisit('v3', { visitDate: inWeek, postTaxPaise: rs(500) }));
+    // A different (earlier) week → excluded entirely.
+    fake.visits.set('v4', baseVisit('v4', { visitDate: '2026-05-20', postTaxPaise: rs(999), invoiceId: 'inv-4' }));
+    const summary = await createDashboardService(fake.repos).weeklySummary('clinic-1', asOf);
+    expect(summary.visitCount).toBe(3);
+    expect(summary.collectedPaise).toBe(rs(3645));
   });
 });
 

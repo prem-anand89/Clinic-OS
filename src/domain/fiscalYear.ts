@@ -63,3 +63,16 @@ export function formatDateDMY(isoDate: string): string {
   const [y, m, d] = isoDate.slice(0, 10).split('-');
   return `${d}/${m}/${y.slice(2)}`;
 }
+
+/** First/last ISO dates of the Monday–Sunday calendar week containing `asOf`. */
+export function currentWeekRange(asOf: Date = new Date()): { from: string; to: string } {
+  const d = new Date(asOf.getFullYear(), asOf.getMonth(), asOf.getDate());
+  // getDay(): 0=Sun..6=Sat; shift so Monday is the start of the week.
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const iso = (x: Date) =>
+    `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  return { from: iso(monday), to: iso(sunday) };
+}

@@ -9,6 +9,7 @@ import { formatDateDMY } from '@/domain/fiscalYear';
 import {
   clinicBillingConfig,
   clinicShareLabels,
+  visibleVisitColumns,
   type PaymentMode,
   type Therapist,
   type Visit,
@@ -28,6 +29,7 @@ import {
   StatTile,
 } from '@/components/ui';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
+import { PatientOverview } from './PatientOverview';
 import { toFriendlyMessage } from '@/lib/errors';
 
 const PAYMENT_MODES: PaymentMode[] = ['Cash', 'Card', 'UPI', 'Insurance'];
@@ -47,6 +49,13 @@ export function VisitsPage() {
   const clinic = useClinic();
   const labels = clinicShareLabels(clinic);
   const { hospitalSplit, therapistSplit } = clinicBillingConfig(clinic);
+  const cols = visibleVisitColumns(clinic);
+  // Fixed columns: Date, Patient, Therapist, Service (before Bill) + Bill,
+  // Invoice, actions. Optional: Condition, Treatment, Adjustment, and the two
+  // hospital-split columns. The Totals label spans everything before Bill.
+  const labelSpan = 4 + (cols.condition ? 1 : 0) + (cols.treatment ? 1 : 0);
+  const columnCount =
+    labelSpan + 1 + (cols.adjustment ? 1 : 0) + (hospitalSplit ? 2 : 0) + 2;
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { patientId?: string };
 
@@ -255,12 +264,11 @@ export function VisitsPage() {
         </div>
       </div>
 
+      {filteredPatient && <PatientOverview patient={filteredPatient} />}
+
       <div className="flex flex-wrap gap-3">
         <StatTile label="This week's visits" value={weeklySummary?.visitCount ?? 0} />
-        <StatTile
-          label={hospitalSplit ? "This week's revenue (Post-Tax)" : "This week's billed"}
-          value={formatINR(weeklySummary?.postTaxPaise ?? 0)}
-        />
+        <StatTile label="Collected this week" value={formatINR(weeklySummary?.collectedPaise ?? 0)} />
         <StatTile label="Packages this month" value={monthlyNew?.newPackages ?? 0} />
         <StatTile label="New patients this month" value={monthlyNew?.newPatients ?? 0} />
       </div>
@@ -339,10 +347,10 @@ export function VisitsPage() {
               <SortHeader label="Patient" k="patient" sort={sort} />
               <SortHeader label="Therapist" k="therapist" sort={sort} />
               <th className={th}>Service</th>
-              <th className={th}>Condition</th>
-              <th className={th}>Treatment</th>
+              {cols.condition && <th className={th}>Condition</th>}
+              {cols.treatment && <th className={th}>Treatment</th>}
               <SortHeader label="Bill" k="bill" sort={sort} numeric firstDir="desc" />
-              <th className={thNum}>Adj.</th>
+              {cols.adjustment && <th className={thNum}>Adj.</th>}
               {hospitalSplit && (
                 <SortHeader label={`${labels.own} Share`} k="bmShare" sort={sort} numeric firstDir="desc" />
               )}
@@ -397,30 +405,34 @@ export function VisitsPage() {
                       </span>
                     )}
                   </td>
-                  <td className={td}>{v.condition ?? '—'}</td>
-                  <td className={`${td} max-w-56`}>
-                    {v.treatmentNotes ? (
-                      v.treatmentNotes.length > TREATMENT_TRUNCATE ? (
-                        <button
-                          type="button"
-                          className="text-left hover:text-[var(--teal)]"
-                          onClick={() => toggleTreatment(v.id)}
-                        >
-                          {expandedTreatment.has(v.id)
-                            ? v.treatmentNotes
-                            : `${v.treatmentNotes.slice(0, TREATMENT_TRUNCATE)}…`}
-                        </button>
+                  {cols.condition && <td className={td}>{v.condition ?? '—'}</td>}
+                  {cols.treatment && (
+                    <td className={`${td} max-w-56`}>
+                      {v.treatmentNotes ? (
+                        v.treatmentNotes.length > TREATMENT_TRUNCATE ? (
+                          <button
+                            type="button"
+                            className="text-left hover:text-[var(--teal)]"
+                            onClick={() => toggleTreatment(v.id)}
+                          >
+                            {expandedTreatment.has(v.id)
+                              ? v.treatmentNotes
+                              : `${v.treatmentNotes.slice(0, TREATMENT_TRUNCATE)}…`}
+                          </button>
+                        ) : (
+                          v.treatmentNotes
+                        )
                       ) : (
-                        v.treatmentNotes
-                      )
-                    ) : (
-                      <span className="text-[var(--muted)]">—</span>
-                    )}
-                  </td>
+                        <span className="text-[var(--muted)]">—</span>
+                      )}
+                    </td>
+                  )}
                   <td className={tdNum}>{formatINR(v.actualBillPaise)}</td>
-                  <td className={tdNum} title={v.adjustmentReason ?? undefined}>
-                    {v.adjustmentPaise !== 0 ? formatINR(v.adjustmentPaise) : '—'}
-                  </td>
+                  {cols.adjustment && (
+                    <td className={tdNum} title={v.adjustmentReason ?? undefined}>
+                      {v.adjustmentPaise !== 0 ? formatINR(v.adjustmentPaise) : '—'}
+                    </td>
+                  )}
                   {hospitalSplit && <td className={tdNum}>{formatINR(v.bmSharePaise)}</td>}
                   {hospitalSplit && <td className={tdNum}>{formatINR(v.postTaxPaise)}</td>}
                   <td className={td}>
@@ -489,7 +501,7 @@ export function VisitsPage() {
             })}
             {visits?.length === 0 && (
               <tr>
-                <td colSpan={hospitalSplit ? 12 : 10} className="px-3 py-8 text-center text-sm text-[var(--muted)]">
+                <td colSpan={columnCount} className="px-3 py-8 text-center text-sm text-[var(--muted)]">
                   No visits match — log one with “New visit”.
                 </td>
               </tr>
@@ -498,11 +510,11 @@ export function VisitsPage() {
           {visits && visits.length > 0 && (
             <tfoot className="border-t-2 border-[var(--border)] bg-[var(--paper)]">
               <tr>
-                <td colSpan={6} className="px-3 py-2 text-sm font-semibold text-[var(--ink)]">
+                <td colSpan={labelSpan} className="px-3 py-2 text-sm font-semibold text-[var(--ink)]">
                   Totals ({visits.length} visit{visits.length === 1 ? '' : 's'})
                 </td>
                 <td className={tdNum}>{formatINR(totals.bill)}</td>
-                <td className={tdNum}></td>
+                {cols.adjustment && <td className={tdNum}></td>}
                 {hospitalSplit && <td className={tdNum}>{formatINR(totals.bmShare)}</td>}
                 {hospitalSplit && <td className={tdNum}>{formatINR(totals.postTax)}</td>}
                 <td className={td}></td>
