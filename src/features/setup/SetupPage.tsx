@@ -6,7 +6,13 @@ import { useClinic } from '@/app/clinicContext';
 import { getSupabase } from '@/lib/supabase';
 import { db } from '@/lib/db';
 import { formatINR } from '@/domain/money';
-import { clinicShareLabels, effectivePricePerSession, type CatalogItem, type Clinic } from '@/domain/types';
+import {
+  clinicBillingConfig,
+  clinicShareLabels,
+  effectivePricePerSession,
+  type CatalogItem,
+  type Clinic,
+} from '@/domain/types';
 import type { TdsBasis } from '@/domain/split';
 import {
   Field,
@@ -137,6 +143,7 @@ function ClinicProfile() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const labels = clinicShareLabels(form);
+  const { hospitalSplit } = clinicBillingConfig(form);
 
   useEffect(() => setForm(clinic), [clinic]);
 
@@ -185,6 +192,40 @@ function ClinicProfile() {
         <Field label="GST / Tax ID (optional)">
           <input className={inputCls} value={form.gstNo ?? ''} onChange={(e) => set({ gstNo: e.target.value || null })} />
         </Field>
+        <Field
+          label={
+            <>
+              Clinic type
+              <InfoTip text="Simple: bill a visit and track paid/outstanding. Hospital-partnered: split each bill between the clinic and a partner hospital, with TDS and Post-Tax columns." />
+            </>
+          }
+        >
+          <select
+            className={inputCls}
+            value={form.billingMode ?? 'hospital_split'}
+            onChange={(e) => set({ billingMode: e.target.value as Clinic['billingMode'] })}
+          >
+            <option value="simple">Simple (bill + paid/outstanding)</option>
+            <option value="hospital_split">Hospital-partnered (revenue split + TDS)</option>
+          </select>
+        </Field>
+        <Field
+          label={
+            <>
+              Track therapist splits
+              <InfoTip text="Lets a visit's revenue be credited between two therapists (a Split action + Shared/Net report columns). Turn off if you don't attribute revenue across therapists." />
+            </>
+          }
+        >
+          <select
+            className={inputCls}
+            value={form.enableTherapistSplit === false ? 'no' : 'yes'}
+            onChange={(e) => set({ enableTherapistSplit: e.target.value === 'yes' })}
+          >
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </Field>
         <Field label="Address">
           <input className={inputCls} value={form.address ?? ''} onChange={(e) => set({ address: e.target.value || null })} />
         </Field>
@@ -194,69 +235,73 @@ function ClinicProfile() {
         <Field label="Email">
           <input className={inputCls} value={form.email ?? ''} onChange={(e) => set({ email: e.target.value || null })} />
         </Field>
-        <Field label="Partner hospital (optional, prints on invoices if set)">
-          <input
-            className={inputCls}
-            value={form.partnerHospitalName ?? ''}
-            onChange={(e) => set({ partnerHospitalName: e.target.value || null })}
-          />
-        </Field>
-        <Field label="Own share label (report column, e.g. BM)">
-          <input
-            className={inputCls}
-            placeholder="BM"
-            value={form.ownShareLabel ?? ''}
-            onChange={(e) => set({ ownShareLabel: e.target.value || null })}
-          />
-        </Field>
-        <Field label="Partner share label (report column, e.g. HV)">
-          <input
-            className={inputCls}
-            placeholder="HV"
-            value={form.partnerShareLabel ?? ''}
-            onChange={(e) => set({ partnerShareLabel: e.target.value || null })}
-          />
-        </Field>
-        <Field label={`Clinic share % (${labels.own} split)`}>
-          <input
-            type="number"
-            className={inputCls}
-            value={form.bmSplitPct}
-            onChange={(e) => set({ bmSplitPct: Number(e.target.value) })}
-          />
-        </Field>
-        <Field
-          label={
-            <>
-              Tax / TDS %
-              <InfoTip text="Tax Deducted at Source — the % withheld before payout to the partner hospital or to the clinic, depending on TDS basis below." />
-            </>
-          }
-        >
-          <input
-            type="number"
-            className={inputCls}
-            value={form.taxPct}
-            onChange={(e) => set({ taxPct: Number(e.target.value) })}
-          />
-        </Field>
-        <Field
-          label={
-            <>
-              TDS basis
-              <InfoTip text="Whether the tax % is calculated on the full bill (matches most hospital sheets) or only on the clinic's own share. Both produce the same final clinic payout." />
-            </>
-          }
-        >
-          <select
-            className={inputCls}
-            value={form.tdsBasis}
-            onChange={(e) => set({ tdsBasis: e.target.value as TdsBasis })}
-          >
-            <option value="gross_bill">10% of gross bill (matches {labels.partner} sheet)</option>
-            <option value="bm_share">On clinic share only</option>
-          </select>
-        </Field>
+        {hospitalSplit && (
+          <>
+            <Field label="Partner hospital (optional, prints on invoices if set)">
+              <input
+                className={inputCls}
+                value={form.partnerHospitalName ?? ''}
+                onChange={(e) => set({ partnerHospitalName: e.target.value || null })}
+              />
+            </Field>
+            <Field label="Own share label (report column, e.g. BM)">
+              <input
+                className={inputCls}
+                placeholder="BM"
+                value={form.ownShareLabel ?? ''}
+                onChange={(e) => set({ ownShareLabel: e.target.value || null })}
+              />
+            </Field>
+            <Field label="Partner share label (report column, e.g. HV)">
+              <input
+                className={inputCls}
+                placeholder="HV"
+                value={form.partnerShareLabel ?? ''}
+                onChange={(e) => set({ partnerShareLabel: e.target.value || null })}
+              />
+            </Field>
+            <Field label={`Clinic share % (${labels.own} split)`}>
+              <input
+                type="number"
+                className={inputCls}
+                value={form.bmSplitPct}
+                onChange={(e) => set({ bmSplitPct: Number(e.target.value) })}
+              />
+            </Field>
+            <Field
+              label={
+                <>
+                  Tax / TDS %
+                  <InfoTip text="Tax Deducted at Source — the % withheld before payout to the partner hospital or to the clinic, depending on TDS basis below." />
+                </>
+              }
+            >
+              <input
+                type="number"
+                className={inputCls}
+                value={form.taxPct}
+                onChange={(e) => set({ taxPct: Number(e.target.value) })}
+              />
+            </Field>
+            <Field
+              label={
+                <>
+                  TDS basis
+                  <InfoTip text="Whether the tax % is calculated on the full bill (matches most hospital sheets) or only on the clinic's own share. Both produce the same final clinic payout." />
+                </>
+              }
+            >
+              <select
+                className={inputCls}
+                value={form.tdsBasis}
+                onChange={(e) => set({ tdsBasis: e.target.value as TdsBasis })}
+              >
+                <option value="gross_bill">{form.taxPct}% of gross bill (matches {labels.partner} sheet)</option>
+                <option value="bm_share">On clinic share only</option>
+              </select>
+            </Field>
+          </>
+        )}
         <Field label="Fiscal year starts in month">
           <input
             type="number"
@@ -275,16 +320,18 @@ function ClinicProfile() {
             onChange={(e) => e.target.files?.[0] && void uploadLogo(e.target.files[0], 'logoPath')}
           />
         </Field>
-        <Field label="Partner hospital logo">
-          <input
-            type="file"
-            accept="image/*"
-            className={inputCls}
-            onChange={(e) =>
-              e.target.files?.[0] && void uploadLogo(e.target.files[0], 'partnerHospitalLogoPath')
-            }
-          />
-        </Field>
+        {hospitalSplit && (
+          <Field label="Partner hospital logo">
+            <input
+              type="file"
+              accept="image/*"
+              className={inputCls}
+              onChange={(e) =>
+                e.target.files?.[0] && void uploadLogo(e.target.files[0], 'partnerHospitalLogoPath')
+              }
+            />
+          </Field>
+        )}
       </div>
       <div className="mt-4 flex items-center gap-3">
         <button className={btnPrimary} onClick={() => void save()}>

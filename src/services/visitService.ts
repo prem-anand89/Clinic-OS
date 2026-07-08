@@ -1,4 +1,4 @@
-import type { Visit, UUID } from '@/domain/types';
+import { clinicBillingConfig, type Visit, type UUID } from '@/domain/types';
 import type { Paise } from '@/domain/money';
 import { computeVisitSplit } from '@/domain/split';
 import type { Repos } from '@/repositories/types';
@@ -52,12 +52,15 @@ export function createVisitService(repos: Repos) {
       const { clinic, item, catalogPricePaise, actualBillPaise, adjustmentPaise } =
         await buildFinancials(input.clinicId, input.serviceCatalogId, input);
 
-      const split = computeVisitSplit(
-        actualBillPaise,
-        clinic.bmSplitPct,
-        clinic.taxPct,
-        clinic.tdsBasis
-      );
+      // In simple (non-hospital) mode the split degenerates: the whole bill is
+      // the clinic's, no tax withheld. Snapshots stored as 100 / 0 keep the
+      // visit self-consistent (share=bill, post-tax=bill, tds=0, hv=0) so
+      // reports reconcile and the immutability trigger stays satisfied.
+      const { hospitalSplit } = clinicBillingConfig(clinic);
+      const splitPct = hospitalSplit ? clinic.bmSplitPct : 100;
+      const taxPct = hospitalSplit ? clinic.taxPct : 0;
+      const tdsBasis = hospitalSplit ? clinic.tdsBasis : 'gross_bill';
+      const split = computeVisitSplit(actualBillPaise, splitPct, taxPct, tdsBasis);
 
       const isPackage = (input.packageTotal ?? item.sessionCount) > 1;
       const visit: Visit = {
@@ -78,9 +81,9 @@ export function createVisitService(repos: Repos) {
         packageGroupId: input.packageGroupId ?? (isPackage ? crypto.randomUUID() : null),
         // Rate snapshots: historical visits keep the split that was active
         // when they were billed, even if the clinic renegotiates later.
-        bmSplitPct: clinic.bmSplitPct,
-        taxPct: clinic.taxPct,
-        tdsBasis: clinic.tdsBasis,
+        bmSplitPct: splitPct,
+        taxPct,
+        tdsBasis,
         bmSharePaise: split.bmSharePaise,
         postTaxPaise: split.postTaxPaise,
         tdsPaise: split.tdsPaise,

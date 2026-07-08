@@ -5,7 +5,7 @@ import { dashboardService } from '@/services';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import { monthName, formatDateDMY } from '@/domain/fiscalYear';
-import { clinicShareLabels } from '@/domain/types';
+import { clinicBillingConfig, clinicShareLabels } from '@/domain/types';
 import { Pill, SectionCard, StatTile, th, thNum, td, tdNum } from '@/components/ui';
 import { BarChart } from '@/components/BarChart';
 import { applySort, byNumber, byString, SortHeader, useSort } from '@/components/sortable';
@@ -30,6 +30,8 @@ const SERIES_COLORS = [
 export function DashboardPage() {
   const clinic = useClinic();
   const labels = clinicShareLabels(clinic);
+  const { hospitalSplit } = clinicBillingConfig(clinic);
+  const revenueLabel = hospitalSplit ? `Post-Tax ${labels.own}` : 'Revenue';
 
   const trend = useLiveQuery(() => dashboardService.revenueTrend(clinic.id), [clinic.id]);
   const openPackages = useLiveQuery(() => dashboardService.openPackages(clinic.id), [clinic.id]);
@@ -306,13 +308,13 @@ export function DashboardPage() {
         </div>
       </SectionCard>
 
-      <SectionCard title={`Revenue trend — last 6 months (Post-Tax ${labels.own})`}>
+      <SectionCard title={`Revenue trend — last 6 months (${revenueLabel})`}>
         {trend && (
           <BarChart
             categories={categories}
             series={[
               {
-                label: `Post-Tax ${labels.own}`,
+                label: revenueLabel,
                 color: SERIES_COLORS[0],
                 values: trend.map((r) => r.total.postTaxPaise),
               },
@@ -326,10 +328,10 @@ export function DashboardPage() {
               <tr>
                 <th className={th}>Month</th>
                 <th className={thNum}>Bill</th>
-                <th className={thNum}>{labels.own} Share</th>
-                <th className={thNum}>TDS</th>
-                <th className={thNum}>Post Tax</th>
-                <th className={thNum}>{labels.partner}</th>
+                {hospitalSplit && <th className={thNum}>{labels.own} Share</th>}
+                {hospitalSplit && <th className={thNum}>TDS</th>}
+                {hospitalSplit && <th className={thNum}>Post Tax</th>}
+                {hospitalSplit && <th className={thNum}>{labels.partner}</th>}
                 <th className={thNum}>Visits</th>
                 <th className={thNum}>Patients</th>
               </tr>
@@ -339,10 +341,10 @@ export function DashboardPage() {
                 <tr key={i} className="hover:bg-[var(--paper)]">
                   <td className={td}>{categories[i]}</td>
                   <td className={tdNum}>{formatINR(r.total.billPaise)}</td>
-                  <td className={tdNum}>{formatINR(r.total.bmSharePaise)}</td>
-                  <td className={tdNum}>{formatINR(r.total.tdsPaise)}</td>
-                  <td className={tdNum}>{formatINR(r.total.postTaxPaise)}</td>
-                  <td className={tdNum}>{formatINR(r.total.hvPaise)}</td>
+                  {hospitalSplit && <td className={tdNum}>{formatINR(r.total.bmSharePaise)}</td>}
+                  {hospitalSplit && <td className={tdNum}>{formatINR(r.total.tdsPaise)}</td>}
+                  {hospitalSplit && <td className={tdNum}>{formatINR(r.total.postTaxPaise)}</td>}
+                  {hospitalSplit && <td className={tdNum}>{formatINR(r.total.hvPaise)}</td>}
                   <td className={tdNum}>{r.total.visitCount}</td>
                   <td className={tdNum}>{r.total.uniquePatients}</td>
                 </tr>
@@ -352,7 +354,7 @@ export function DashboardPage() {
         </div>
       </SectionCard>
 
-      <SectionCard title={`Therapist comparison — Post-Tax ${labels.own}`}>
+      <SectionCard title={`Therapist comparison — ${revenueLabel}`}>
         {trend && therapistNames.length > 0 && (
           <BarChart
             categories={categories}

@@ -8,7 +8,7 @@ import { rupeesToPaise as rs } from '@/domain/money';
 
 // In-memory Repos double — services never touch Dexie or Supabase directly,
 // which is exactly what makes them testable (and the backend swappable).
-function makeFakeRepos() {
+function makeFakeRepos(clinicOverrides: Partial<Clinic> = {}) {
   const clinic: Clinic = {
     id: 'clinic-1',
     name: 'Beyond Mechanics',
@@ -25,6 +25,7 @@ function makeFakeRepos() {
     tdsBasis: 'gross_bill',
     fyStartMonth: 4,
     updatedAt: '',
+    ...clinicOverrides,
   };
   const therapists: Therapist[] = [
     { id: 'th-prem', clinicId: 'clinic-1', name: 'Prem', active: true, updatedAt: '' },
@@ -198,6 +199,18 @@ describe('visitService.create', () => {
       adjustmentReason: 'hardship case',
     });
     expect(updated.postTaxPaise).toBe(rs(1350)); // 2000 × 0.675
+  });
+
+  it('degenerates the split in simple (non-hospital) billing mode', async () => {
+    const simpleFake = makeFakeRepos({ billingMode: 'simple' });
+    const v = await createVisitService(simpleFake.repos).create(base);
+    // Whole bill is the clinic's; no tax withheld; snapshots stored as 100/0.
+    expect(v.bmSplitPct).toBe(100);
+    expect(v.taxPct).toBe(0);
+    expect(v.bmSharePaise).toBe(v.actualBillPaise);
+    expect(v.postTaxPaise).toBe(v.actualBillPaise);
+    expect(v.tdsPaise).toBe(0);
+    expect(v.hvPaise).toBe(0);
   });
 });
 

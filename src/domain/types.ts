@@ -22,6 +22,14 @@ export interface Clinic {
   ownShareLabel?: string | null;
   /** Abbreviation for the partner hospital's share (default "HV"). */
   partnerShareLabel?: string | null;
+  /**
+   * 'hospital_split' = the clinic-share/partner-share/TDS/Post-Tax model;
+   * 'simple' = a plain clinic that just bills a visit (no share/tax columns).
+   * Optional so older cached rows default to hospital_split (current behavior).
+   */
+  billingMode?: 'simple' | 'hospital_split';
+  /** Whether the internal therapist revenue-split feature is available. */
+  enableTherapistSplit?: boolean;
   updatedAt: string;
 }
 
@@ -32,6 +40,21 @@ export function clinicShareLabels(
   return {
     own: clinic.ownShareLabel?.trim() || 'BM',
     partner: clinic.partnerShareLabel?.trim() || 'HV',
+  };
+}
+
+/**
+ * Which billing surfaces a clinic shows. Defaults preserve the original
+ * hospital-split behavior when the fields are unset (older cached rows or the
+ * founding clinic), so nothing changes for Beyond Mechanics.
+ */
+export function clinicBillingConfig(
+  clinic: Pick<Clinic, 'billingMode' | 'enableTherapistSplit'>
+): { hospitalSplit: boolean; therapistSplit: boolean } {
+  const hospitalSplit = (clinic.billingMode ?? 'hospital_split') === 'hospital_split';
+  return {
+    hospitalSplit,
+    therapistSplit: clinic.enableTherapistSplit ?? true,
   };
 }
 

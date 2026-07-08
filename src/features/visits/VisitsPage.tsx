@@ -6,7 +6,13 @@ import { db } from '@/lib/db';
 import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import { formatDateDMY } from '@/domain/fiscalYear';
-import { clinicShareLabels, type PaymentMode, type Therapist, type Visit } from '@/domain/types';
+import {
+  clinicBillingConfig,
+  clinicShareLabels,
+  type PaymentMode,
+  type Therapist,
+  type Visit,
+} from '@/domain/types';
 import {
   btnPrimary,
   btnSecondary,
@@ -40,6 +46,7 @@ const TREATMENT_TRUNCATE = 40;
 export function VisitsPage() {
   const clinic = useClinic();
   const labels = clinicShareLabels(clinic);
+  const { hospitalSplit, therapistSplit } = clinicBillingConfig(clinic);
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { patientId?: string };
 
@@ -250,7 +257,10 @@ export function VisitsPage() {
 
       <div className="flex flex-wrap gap-3">
         <StatTile label="This week's visits" value={weeklySummary?.visitCount ?? 0} />
-        <StatTile label="This week's revenue (Post-Tax)" value={formatINR(weeklySummary?.postTaxPaise ?? 0)} />
+        <StatTile
+          label={hospitalSplit ? "This week's revenue (Post-Tax)" : "This week's billed"}
+          value={formatINR(weeklySummary?.postTaxPaise ?? 0)}
+        />
         <StatTile label="Packages this month" value={monthlyNew?.newPackages ?? 0} />
         <StatTile label="New patients this month" value={monthlyNew?.newPatients ?? 0} />
       </div>
@@ -333,8 +343,12 @@ export function VisitsPage() {
               <th className={th}>Treatment</th>
               <SortHeader label="Bill" k="bill" sort={sort} numeric firstDir="desc" />
               <th className={thNum}>Adj.</th>
-              <SortHeader label={`${labels.own} Share`} k="bmShare" sort={sort} numeric firstDir="desc" />
-              <SortHeader label="Post Tax" k="postTax" sort={sort} numeric firstDir="desc" />
+              {hospitalSplit && (
+                <SortHeader label={`${labels.own} Share`} k="bmShare" sort={sort} numeric firstDir="desc" />
+              )}
+              {hospitalSplit && (
+                <SortHeader label="Post Tax" k="postTax" sort={sort} numeric firstDir="desc" />
+              )}
               <th className={th}>Invoice</th>
               <th className={th}></th>
             </tr>
@@ -369,7 +383,7 @@ export function VisitsPage() {
                   </td>
                   <td className={td}>
                     {therapistName.get(v.therapistId) ?? '—'}
-                    {v.sharedTherapistId && (
+                    {therapistSplit && v.sharedTherapistId && (
                       <div className="text-xs font-medium text-[var(--moss-strong)]" title="Internal revenue split">
                         ⇄ {therapistName.get(v.sharedTherapistId) ?? '—'} {v.sharedPct}%
                       </div>
@@ -407,8 +421,8 @@ export function VisitsPage() {
                   <td className={tdNum} title={v.adjustmentReason ?? undefined}>
                     {v.adjustmentPaise !== 0 ? formatINR(v.adjustmentPaise) : '—'}
                   </td>
-                  <td className={tdNum}>{formatINR(v.bmSharePaise)}</td>
-                  <td className={tdNum}>{formatINR(v.postTaxPaise)}</td>
+                  {hospitalSplit && <td className={tdNum}>{formatINR(v.bmSharePaise)}</td>}
+                  {hospitalSplit && <td className={tdNum}>{formatINR(v.postTaxPaise)}</td>}
                   <td className={td}>
                     {v.invoiceId ? (
                       <Link
@@ -445,7 +459,7 @@ export function VisitsPage() {
                           Repeat
                         </Link>
                       )}
-                      {v.actualBillPaise > 0 && (
+                      {therapistSplit && v.actualBillPaise > 0 && (
                         <button
                           className="text-xs text-[var(--muted)] hover:text-[var(--moss)]"
                           title="Share this visit's revenue with another therapist"
@@ -475,7 +489,7 @@ export function VisitsPage() {
             })}
             {visits?.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-3 py-8 text-center text-sm text-[var(--muted)]">
+                <td colSpan={hospitalSplit ? 12 : 10} className="px-3 py-8 text-center text-sm text-[var(--muted)]">
                   No visits match — log one with “New visit”.
                 </td>
               </tr>
@@ -489,8 +503,8 @@ export function VisitsPage() {
                 </td>
                 <td className={tdNum}>{formatINR(totals.bill)}</td>
                 <td className={tdNum}></td>
-                <td className={tdNum}>{formatINR(totals.bmShare)}</td>
-                <td className={tdNum}>{formatINR(totals.postTax)}</td>
+                {hospitalSplit && <td className={tdNum}>{formatINR(totals.bmShare)}</td>}
+                {hospitalSplit && <td className={tdNum}>{formatINR(totals.postTax)}</td>}
                 <td className={td}></td>
                 <td className={td}></td>
               </tr>

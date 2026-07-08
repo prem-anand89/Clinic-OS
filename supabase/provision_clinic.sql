@@ -24,9 +24,11 @@ declare
   v_name          text    := 'New Physio Clinic';       -- clinic name
   v_partner       text    := null;                        -- partner hospital name, or null
   v_prefix        text    := 'NPC';                       -- invoice number prefix
-  v_bm_split_pct  numeric := 75;                          -- the clinic's own share %
-  v_tax_pct       numeric := 10;                          -- tax / TDS %
-  v_tds_basis     text    := 'gross_bill';                -- 'gross_bill' or 'bm_share'
+  v_billing_mode  text    := 'simple';                    -- 'simple' (bill + paid/outstanding) or 'hospital_split'
+  v_therapist_split boolean := false;                     -- track internal therapist revenue splits?
+  v_bm_split_pct  numeric := 75;                          -- own share % (only used in hospital_split mode)
+  v_tax_pct       numeric := 10;                          -- tax / TDS % (only used in hospital_split mode)
+  v_tds_basis     text    := 'gross_bill';                -- 'gross_bill' or 'bm_share' (hospital_split only)
   v_fy_start      int     := 4;                           -- fiscal year start month (April = 4)
   v_own_label     text    := null;                        -- report column label; null → 'BM'
   v_partner_label text    := null;                        -- report column label; null → 'HV'
@@ -43,10 +45,12 @@ begin
 
   insert into clinics (
     id, name, partner_hospital_name, invoice_prefix,
+    billing_mode, enable_therapist_split,
     bm_split_pct, tax_pct, tds_basis, fy_start_month,
     own_share_label, partner_share_label
   ) values (
     v_clinic_id, v_name, v_partner, v_prefix,
+    v_billing_mode, v_therapist_split,
     v_bm_split_pct, v_tax_pct, v_tds_basis, v_fy_start,
     v_own_label, v_partner_label
   );

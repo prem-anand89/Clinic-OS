@@ -134,11 +134,19 @@ describe('reportService.toCsv — configurable share labels', () => {
   it('renders the clinic-configured labels when provided', async () => {
     const report = await createReportService(makeFakeRepos([visit({})])).monthly(CLINIC, JULY);
     const header = createReportService(makeFakeRepos([]))
-      .toCsv(report, { own: 'ZM', partner: 'CityHosp' })
+      .toCsv(report, { labels: { own: 'ZM', partner: 'CityHosp' } })
       .split('\n')[0];
     expect(header).toContain('"ZM Share"');
     expect(header).toContain('"Post Tax ZM"');
     expect(header).toContain('"CityHosp Share"');
+  });
+
+  it('drops the split columns in simple (non-hospital) mode', async () => {
+    const report = await createReportService(makeFakeRepos([visit({})])).monthly(CLINIC, JULY);
+    const header = createReportService(makeFakeRepos([]))
+      .toCsv(report, { hospitalSplit: false, therapistSplit: false })
+      .split('\n')[0];
+    expect(header).toBe('"Therapist","Bill Amount","Visits","Patients"');
   });
 });
 

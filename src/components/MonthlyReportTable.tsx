@@ -4,17 +4,23 @@ import type { MonthlyReport, TherapistMonthRow } from '@/services/reportService'
 
 /**
  * Per-therapist totals table — used on the Reports page and the monthly
- * ledger PDF. The "Shared" column (internal therapist split) is shown only
- * where `showShared` is set; the hospital-facing PDF leaves it off so that
- * document stays purely about billed figures the hospital reconciles.
+ * ledger PDF.
+ *
+ * `hospitalSplit` (default on) shows the clinic-share / TDS / Post-Tax /
+ * partner-share columns; a simple clinic turns it off and sees just billed
+ * totals. `showShared` adds the internal therapist-split columns (Shared/Net);
+ * the hospital-facing PDF leaves it off so that document stays purely about
+ * billed figures the hospital reconciles.
  */
 export function MonthlyReportTable({
   report,
+  hospitalSplit = true,
   showShared = false,
   own = 'BM',
   partner = 'HV',
 }: {
   report: MonthlyReport | undefined;
+  hospitalSplit?: boolean;
   showShared?: boolean;
   own?: string;
   partner?: string;
@@ -22,10 +28,10 @@ export function MonthlyReportTable({
   const cells = (r: TherapistMonthRow) => (
     <>
       <td className={tdNum}>{formatINR(r.billPaise)}</td>
-      <td className={tdNum}>{formatINR(r.bmSharePaise)}</td>
-      <td className={tdNum}>{formatINR(r.tdsPaise)}</td>
-      <td className={tdNum}>{formatINR(r.postTaxPaise)}</td>
-      <td className={tdNum}>{formatINR(r.hvPaise)}</td>
+      {hospitalSplit && <td className={tdNum}>{formatINR(r.bmSharePaise)}</td>}
+      {hospitalSplit && <td className={tdNum}>{formatINR(r.tdsPaise)}</td>}
+      {hospitalSplit && <td className={tdNum}>{formatINR(r.postTaxPaise)}</td>}
+      {hospitalSplit && <td className={tdNum}>{formatINR(r.hvPaise)}</td>}
       {showShared && <td className={tdNum}>{r.sharedPaise !== 0 ? formatINR(r.sharedPaise) : '—'}</td>}
       {showShared && <td className={tdNum}>{formatINR(r.netPostTaxPaise)}</td>}
       <td className={tdNum}>{r.visitCount}</td>
@@ -39,22 +45,30 @@ export function MonthlyReportTable({
         <tr>
           <th className={th}>Therapist</th>
           <th className={thNum}>Bill Amount</th>
-          <th className={thNum}>
-            {own} Share
-            {showShared && <InfoTip text={`The clinic's own cut of the bill, before tax (${own} split % from Setup).`} />}
-          </th>
-          <th className={thNum}>
-            TDS Deducted
-            {showShared && <InfoTip text="Tax Deducted at Source — withheld before payout, per the clinic's TDS basis." />}
-          </th>
-          <th className={thNum}>
-            Post Tax {own}
-            {showShared && <InfoTip text={`${own} Share after TDS — what the clinic actually keeps from this bill.`} />}
-          </th>
-          <th className={thNum}>
-            {partner} Share
-            {showShared && <InfoTip text={`The remainder of the bill after ${own}'s cut — what goes to ${partner}.`} />}
-          </th>
+          {hospitalSplit && (
+            <th className={thNum}>
+              {own} Share
+              {showShared && <InfoTip text={`The clinic's own cut of the bill, before tax (${own} split % from Setup).`} />}
+            </th>
+          )}
+          {hospitalSplit && (
+            <th className={thNum}>
+              TDS Deducted
+              {showShared && <InfoTip text="Tax Deducted at Source — withheld before payout, per the clinic's TDS basis." />}
+            </th>
+          )}
+          {hospitalSplit && (
+            <th className={thNum}>
+              Post Tax {own}
+              {showShared && <InfoTip text={`${own} Share after TDS — what the clinic actually keeps from this bill.`} />}
+            </th>
+          )}
+          {hospitalSplit && (
+            <th className={thNum}>
+              {partner} Share
+              {showShared && <InfoTip text={`The remainder of the bill after ${own}'s cut — what goes to ${partner}.`} />}
+            </th>
+          )}
           {showShared && (
             <th className={thNum}>
               Shared

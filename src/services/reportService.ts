@@ -127,28 +127,40 @@ export function createReportService(repos: Repos) {
       };
     },
 
-    toCsv(report: MonthlyReport, labels: { own: string; partner: string } = { own: 'BM', partner: 'HV' }): string {
+    toCsv(
+      report: MonthlyReport,
+      opts: {
+        labels?: { own: string; partner: string };
+        hospitalSplit?: boolean;
+        therapistSplit?: boolean;
+      } = {}
+    ): string {
+      const labels = opts.labels ?? { own: 'BM', partner: 'HV' };
+      const hospitalSplit = opts.hospitalSplit ?? true;
+      const therapistSplit = opts.therapistSplit ?? true;
+
       const header = [
         'Therapist',
         'Bill Amount',
-        `${labels.own} Share`,
-        'TDS Deducted',
-        `Post Tax ${labels.own}`,
-        `${labels.partner} Share`,
-        'Shared',
-        'Net',
+        ...(hospitalSplit
+          ? [`${labels.own} Share`, 'TDS Deducted', `Post Tax ${labels.own}`, `${labels.partner} Share`]
+          : []),
+        ...(therapistSplit ? ['Shared', 'Net'] : []),
         'Visits',
         'Patients',
       ];
       const line = (r: TherapistMonthRow) => [
         r.therapistName,
         paiseToRupees(r.billPaise),
-        paiseToRupees(r.bmSharePaise),
-        paiseToRupees(r.tdsPaise),
-        paiseToRupees(r.postTaxPaise),
-        paiseToRupees(r.hvPaise),
-        paiseToRupees(r.sharedPaise),
-        paiseToRupees(r.netPostTaxPaise),
+        ...(hospitalSplit
+          ? [
+              paiseToRupees(r.bmSharePaise),
+              paiseToRupees(r.tdsPaise),
+              paiseToRupees(r.postTaxPaise),
+              paiseToRupees(r.hvPaise),
+            ]
+          : []),
+        ...(therapistSplit ? [paiseToRupees(r.sharedPaise), paiseToRupees(r.netPostTaxPaise)] : []),
         r.visitCount,
         r.uniquePatients,
       ];

@@ -6,7 +6,7 @@ import { useClinic } from '@/app/clinicContext';
 import { formatINR } from '@/domain/money';
 import type { Paise } from '@/domain/money';
 import { fiscalYearOf, monthsOfFiscalYear, monthName, type FyMonth } from '@/domain/fiscalYear';
-import { clinicShareLabels } from '@/domain/types';
+import { clinicBillingConfig, clinicShareLabels } from '@/domain/types';
 import { btnPrimary, btnSecondary, inputCls, Field, RupeeInput, SectionCard, ErrorNote } from '@/components/ui';
 import { MonthlyReportTable } from '@/components/MonthlyReportTable';
 import { toFriendlyMessage } from '@/lib/errors';
@@ -14,6 +14,7 @@ import { toFriendlyMessage } from '@/lib/errors';
 export function ReportsPage() {
   const clinic = useClinic();
   const labels = clinicShareLabels(clinic);
+  const { hospitalSplit, therapistSplit } = clinicBillingConfig(clinic);
   const currentFy = fiscalYearOf(new Date(), clinic.fyStartMonth);
   const [fyStartYear, setFyStartYear] = useState(currentFy.startYear);
   const now = new Date();
@@ -36,7 +37,9 @@ export function ReportsPage() {
 
   function downloadCsv() {
     if (!report) return;
-    const blob = new Blob([reportService.toCsv(report, labels)], { type: 'text/csv' });
+    const blob = new Blob([reportService.toCsv(report, { labels, hospitalSplit, therapistSplit })], {
+      type: 'text/csv',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -82,23 +85,37 @@ export function ReportsPage() {
       </div>
 
       <div className="overflow-x-auto rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
-        <MonthlyReportTable report={report} showShared own={labels.own} partner={labels.partner} />
+        <MonthlyReportTable
+          report={report}
+          hospitalSplit={hospitalSplit}
+          showShared={therapistSplit}
+          own={labels.own}
+          partner={labels.partner}
+        />
       </div>
 
       <p className="text-xs text-[var(--muted)]">
-        Patients = unique patients in the month, not visit count. TDS basis for new visits:{' '}
-        {clinic.tdsBasis === 'gross_bill'
-          ? `10%-of-gross-bill (matches the ${labels.partner} sheet)`
-          : `on ${labels.own} share`}
-        ; each visit keeps the basis and rates that were active when it was billed.
+        Patients = unique patients in the month, not visit count.
+        {hospitalSplit && (
+          <>
+            {' '}
+            TDS basis for new visits:{' '}
+            {clinic.tdsBasis === 'gross_bill'
+              ? `${clinic.taxPct}%-of-gross-bill (matches the ${labels.partner} sheet)`
+              : `on ${labels.own} share`}
+            ; each visit keeps the basis and rates that were active when it was billed.
+          </>
+        )}
       </p>
 
-      <SettlementCard
-        clinicId={clinic.id}
-        month={selected}
-        expectedPaise={report?.total.postTaxPaise ?? null}
-        labels={labels}
-      />
+      {hospitalSplit && (
+        <SettlementCard
+          clinicId={clinic.id}
+          month={selected}
+          expectedPaise={report?.total.postTaxPaise ?? null}
+          labels={labels}
+        />
+      )}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { useClinic } from '@/app/clinicContext';
 import { publicLogoUrl } from '@/lib/supabase';
 import { formatINR } from '@/domain/money';
 import { fiscalYearOf, monthDateRange, monthName, formatDateDMY } from '@/domain/fiscalYear';
-import { clinicShareLabels } from '@/domain/types';
+import { clinicBillingConfig, clinicShareLabels } from '@/domain/types';
 import { btnPrimary, btnSecondary } from '@/components/ui';
 import { MonthlyReportTable } from '@/components/MonthlyReportTable';
 
@@ -18,6 +18,7 @@ export function MonthlyLedgerPrintPage() {
   const clinic = useClinic();
   const { year, month } = useSearch({ strict: false }) as { year: number; month: number };
   const labels = clinicShareLabels(clinic);
+  const { hospitalSplit } = clinicBillingConfig(clinic);
   const period = { year, month };
   const fy = fiscalYearOf(new Date(period.year, period.month - 1, 1), clinic.fyStartMonth);
 
@@ -151,7 +152,7 @@ export function MonthlyLedgerPrintPage() {
         {/* Per-therapist summary */}
         <h2 className="mt-8 text-sm font-bold text-[var(--ink)]">Monthly Summary</h2>
         <div className="mt-2 overflow-x-auto">
-          <MonthlyReportTable report={report} own={labels.own} partner={labels.partner} />
+          <MonthlyReportTable report={report} hospitalSplit={hospitalSplit} own={labels.own} partner={labels.partner} />
         </div>
 
         <footer className="mt-8 border-t border-[var(--border)] pt-3 text-xs text-[var(--muted)]">
