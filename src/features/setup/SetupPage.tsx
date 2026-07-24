@@ -32,6 +32,7 @@ import {
   InfoTip,
 } from '@/components/ui';
 import { toFriendlyMessage } from '@/lib/errors';
+import { buildClinicExport } from '@/services/exportService';
 
 export function SetupPage() {
   return (
@@ -48,8 +49,50 @@ export function SetupPage() {
           Import historical visits from Excel →
         </Link>
       </SectionCard>
+      <ExportData />
       <DangerZone />
     </div>
+  );
+}
+
+function ExportData() {
+  const clinic = useClinic();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function downloadExport() {
+    setError(null);
+    setBusy(true);
+    try {
+      const data = await buildClinicExport(clinic.id);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${clinic.invoicePrefix}-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(toFriendlyMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SectionCard title="Export data">
+      <p className="mb-3 text-xs text-[var(--muted)]">
+        Download every patient, visit, invoice, payment, and settlement record for this clinic as
+        one JSON file — for backup, or to migrate into another clinic-management deployment. This
+        only reads data already on this device; nothing is sent anywhere.
+      </p>
+      <button className={btnSecondary} disabled={busy} onClick={() => void downloadExport()}>
+        {busy ? 'Preparing…' : 'Export all clinic data'}
+      </button>
+      <div className="mt-2">
+        <ErrorNote message={error} />
+      </div>
+    </SectionCard>
   );
 }
 
