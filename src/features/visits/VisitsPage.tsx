@@ -25,6 +25,7 @@ import {
   ErrorNote,
   Field,
   PackageThread,
+  RupeeInput,
   SectionCard,
   StatTile,
 } from '@/components/ui';
@@ -66,6 +67,7 @@ export function VisitsPage() {
   const [patientQuery, setPatientQuery] = useState('');
   const [invoicing, setInvoicing] = useState<Visit | null>(null);
   const [splitting, setSplitting] = useState<Visit | null>(null);
+  const [editing, setEditing] = useState<Visit | null>(null);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('Cash');
   const [paidNow, setPaidNow] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -461,6 +463,18 @@ export function VisitsPage() {
                   </td>
                   <td className={td}>
                     <div className="flex gap-3">
+                      {!v.invoiceId && (
+                        <button
+                          className="text-xs text-[var(--muted)] hover:text-[var(--teal)]"
+                          title="Edit this visit"
+                          onClick={() => {
+                            setError(null);
+                            setEditing(v);
+                          }}
+                        >
+                          Edit
+                        </button>
+                      )}
                       {v.packageGroupId && openPackageGroupIds.has(v.packageGroupId) && (
                         <Link
                           to="/visits/new"
@@ -580,6 +594,129 @@ export function VisitsPage() {
           onClose={() => setSplitting(null)}
         />
       )}
+
+      {editing && (
+        <EditVisitModal
+          visit={editing}
+          therapists={therapists ?? []}
+          serviceName={serviceName.get(editing.serviceCatalogId) ?? '—'}
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditVisitModal({
+  visit,
+  therapists,
+  serviceName,
+  onClose,
+}: {
+  visit: Visit;
+  therapists: Therapist[];
+  serviceName: string;
+  onClose: () => void;
+}) {
+  const [therapistId, setTherapistId] = useState(visit.therapistId);
+  const [visitDate, setVisitDate] = useState(visit.visitDate);
+  const [condition, setCondition] = useState(visit.condition ?? '');
+  const [treatmentNotes, setTreatmentNotes] = useState(visit.treatmentNotes ?? '');
+  const [billPaise, setBillPaise] = useState(visit.actualBillPaise);
+  const [adjustmentReason, setAdjustmentReason] = useState(visit.adjustmentReason ?? '');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const adjustmentPaise = billPaise - visit.catalogPricePaise;
+
+  async function save() {
+    setError(null);
+    setBusy(true);
+    try {
+      await visitService.updateBilling(visit.id, {
+        therapistId,
+        visitDate,
+        condition,
+        treatmentNotes,
+        actualBillPaise: billPaise,
+        adjustmentReason,
+      });
+      onClose();
+    } catch (e) {
+      setError(toFriendlyMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-20 flex items-center justify-center bg-[var(--ink)]/40 p-4">
+      <div className="w-full max-w-sm space-y-4 rounded-[10px] bg-[var(--surface)] p-5">
+        <h2 className="text-sm font-semibold text-[var(--ink)]">Edit visit</h2>
+        <p className="text-sm text-[var(--muted)]">
+          {serviceName}. The service itself can't be changed here — delete and re-log the visit if
+          it's the wrong one.
+        </p>
+        <Field label="Date">
+          <input
+            type="date"
+            className={inputCls}
+            value={visitDate}
+            onChange={(e) => setVisitDate(e.target.value)}
+          />
+        </Field>
+        <Field label="Therapist">
+          <select
+            className={inputCls}
+            value={therapistId}
+            onChange={(e) => setTherapistId(e.target.value)}
+          >
+            {therapists.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label={`Bill amount (catalog: ${formatINR(visit.catalogPricePaise)})`}>
+          <RupeeInput valuePaise={billPaise} onChange={(p) => setBillPaise(p ?? 0)} />
+        </Field>
+        {adjustmentPaise !== 0 && (
+          <Field
+            label={`Adjustment reason * (${adjustmentPaise < 0 ? 'discount' : 'top-up'} of ${formatINR(Math.abs(adjustmentPaise))})`}
+          >
+            <input
+              className={inputCls}
+              placeholder="e.g. loyalty discount, added session"
+              value={adjustmentReason}
+              onChange={(e) => setAdjustmentReason(e.target.value)}
+            />
+          </Field>
+        )}
+        <Field label="Condition">
+          <input
+            className={inputCls}
+            value={condition}
+            onChange={(e) => setCondition(e.target.value)}
+          />
+        </Field>
+        <Field label="Treatment notes">
+          <input
+            className={inputCls}
+            value={treatmentNotes}
+            onChange={(e) => setTreatmentNotes(e.target.value)}
+          />
+        </Field>
+        <ErrorNote message={error} />
+        <div className="flex justify-end gap-2">
+          <button className={btnSecondary} onClick={onClose}>
+            Cancel
+          </button>
+          <button className={btnPrimary} disabled={busy} onClick={() => void save()}>
+            {busy ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
